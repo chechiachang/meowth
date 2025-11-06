@@ -1,50 +1,75 @@
-# [PROJECT_NAME] Constitution
-<!-- Example: Spec Constitution, TaskFlow Constitution, etc. -->
+<!--
+Sync Impact Report:
+Version change: N/A → 1.0.0
+Added principles:
+- I. Test-First Development (NON-NEGOTIABLE)
+- II. Code Quality Standards  
+- III. Environment Safety
+- IV. API Integration Safety
+- V. Modular Architecture
+Added sections:
+- Security & Safety Requirements
+- Development Workflow
+Templates requiring updates:
+✅ Updated plan-template.md (Constitution Check section aligns)
+✅ Updated spec-template.md (testing requirements align)
+✅ Updated tasks-template.md (TDD task ordering aligns)
+Follow-up TODOs: None - all placeholders filled
+-->
+
+# Meowth Constitution
 
 ## Core Principles
 
-### [PRINCIPLE_1_NAME]
-<!-- Example: I. Library-First -->
-[PRINCIPLE_1_DESCRIPTION]
-<!-- Example: Every feature starts as a standalone library; Libraries must be self-contained, independently testable, documented; Clear purpose required - no organizational-only libraries -->
+### I. Test-First Development (NON-NEGOTIABLE)
+TDD mandatory for all code: Tests MUST be written first, reviewed and approved, MUST fail initially, then implementation follows. Red-Green-Refactor cycle strictly enforced. No code merges without corresponding tests that validate the intended behavior.
 
-### [PRINCIPLE_2_NAME]
-<!-- Example: II. CLI Interface -->
-[PRINCIPLE_2_DESCRIPTION]
-<!-- Example: Every library exposes functionality via CLI; Text in/out protocol: stdin/args → stdout, errors → stderr; Support JSON + human-readable formats -->
+**Rationale**: Prevents regressions, ensures reliable integrations with external APIs (Slack/Notion), and maintains system stability as complexity grows.
 
-### [PRINCIPLE_3_NAME]
-<!-- Example: III. Test-First (NON-NEGOTIABLE) -->
-[PRINCIPLE_3_DESCRIPTION]
-<!-- Example: TDD mandatory: Tests written → User approved → Tests fail → Then implement; Red-Green-Refactor cycle strictly enforced -->
+### II. Code Quality Standards
+All code MUST follow established quality gates: automated linting (flake8/black for Python), type hints mandatory, maximum function complexity limits enforced, documentation required for all public interfaces, and consistent naming conventions across the codebase.
 
-### [PRINCIPLE_4_NAME]
-<!-- Example: IV. Integration Testing -->
-[PRINCIPLE_4_DESCRIPTION]
-<!-- Example: Focus areas requiring integration tests: New library contract tests, Contract changes, Inter-service communication, Shared schemas -->
+**Rationale**: External API integrations require reliable, maintainable code that can handle evolving third-party dependencies and complex data transformations.
 
-### [PRINCIPLE_5_NAME]
-<!-- Example: V. Observability, VI. Versioning & Breaking Changes, VII. Simplicity -->
-[PRINCIPLE_5_DESCRIPTION]
-<!-- Example: Text I/O ensures debuggability; Structured logging required; Or: MAJOR.MINOR.BUILD format; Or: Start simple, YAGNI principles -->
+### III. Environment Safety
+Environment-specific configurations MUST be externalized and validated. No hardcoded credentials, API keys, or environment-specific values in source code. All external dependencies MUST be pinned with explicit version ranges. Development, staging, and production environments MUST be isolated.
 
-## [SECTION_2_NAME]
-<!-- Example: Additional Constraints, Security Requirements, Performance Standards, etc. -->
+**Rationale**: Multi-API integration (Slack + Notion) requires secure credential management and consistent behavior across deployment environments.
 
-[SECTION_2_CONTENT]
-<!-- Example: Technology stack requirements, compliance standards, deployment policies, etc. -->
+### IV. API Integration Safety
+All external API calls MUST implement proper error handling, rate limiting respect, timeout controls, and retry logic with exponential backoff. Circuit breaker patterns required for critical paths. All API responses MUST be validated before processing.
 
-## [SECTION_3_NAME]
-<!-- Example: Development Workflow, Review Process, Quality Gates, etc. -->
+**Rationale**: Slack and Notion APIs have different rate limits, error patterns, and availability characteristics that require defensive programming practices.
 
-[SECTION_3_CONTENT]
-<!-- Example: Code review requirements, testing gates, deployment approval process, etc. -->
+### V. Modular Architecture
+Each feature MUST be implemented as independently testable modules with clear interfaces. API clients, data processing, and scheduling logic MUST be separated into distinct layers. Shared schemas and data models MUST be versioned and backward-compatible.
+
+**Rationale**: Enables independent testing of Slack monitoring, Notion page creation, and message aggregation without requiring full system integration.
+
+## Security & Safety Requirements
+
+**Credential Management**: All API tokens and sensitive configuration MUST use environment variables or secure secret management. No credentials in logs, error messages, or debug output.
+
+**Data Privacy**: Slack message content MUST be handled according to data retention policies. Personal information MUST be scrubbed from logs and error reports.
+
+**Rate Limiting**: MUST respect both Slack (50+ requests per minute) and Notion API limits. Implement queuing and backoff strategies to prevent service disruption.
+
+**Error Boundaries**: System MUST continue operating when one API is unavailable. Graceful degradation required for partial failures.
+
+## Development Workflow
+
+**Code Review Gates**: All changes MUST pass automated tests, linting, type checking, and manual review before merge. Constitution compliance verified in PR template.
+
+**Testing Requirements**: Unit tests for all business logic, integration tests for API interactions, contract tests for data transformations. Minimum 90% code coverage maintained.
+
+**Deployment Safety**: Staged deployments required. Health checks MUST verify API connectivity before traffic routing. Rollback procedures documented and tested.
+
+**Documentation**: All modules MUST include docstrings, API integration patterns MUST be documented with examples, deployment procedures MUST be automated and documented.
 
 ## Governance
-<!-- Example: Constitution supersedes all other practices; Amendments require documentation, approval, migration plan -->
 
-[GOVERNANCE_RULES]
-<!-- Example: All PRs/reviews must verify compliance; Complexity must be justified; Use [GUIDANCE_FILE] for runtime development guidance -->
+This constitution supersedes all other development practices and MUST be verified during all code reviews. Any complexity that violates these principles MUST be explicitly justified with documented rationale and simpler alternatives considered. 
 
-**Version**: [CONSTITUTION_VERSION] | **Ratified**: [RATIFICATION_DATE] | **Last Amended**: [LAST_AMENDED_DATE]
-<!-- Example: Version: 2.1.1 | Ratified: 2025-06-13 | Last Amended: 2025-07-16 -->
+Version changes require full team review and migration planning. All amendments MUST maintain backward compatibility with existing templates and workflows.
+
+**Version**: 1.0.0 | **Ratified**: 2025-11-06 | **Last Amended**: 2025-11-06
