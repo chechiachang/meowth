@@ -36,6 +36,12 @@ techincal implementation
 /speckit.plan The application use python. The application uses uv as the package manager and project manager. Put source code in ./src. The application will use the official slack-python-sdk to interact with the Slack API and notion-sdk-py to interact with the Notion API. The application will be structured in a modular way to separate concerns such as API interactions, data processing, and scheduling. The application will implement authentication mechanisms for both APIs, handle errors gracefully, and respect rate limits imposed by the APIs. The application will also include unit tests to ensure code quality and reliability. Put tests in ./tests.
 ```
 
+Generate tasks for implementation
+
+```
+/speckit.tasks
+```
+
 ---
 
 ## Notes
