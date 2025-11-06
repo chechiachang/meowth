@@ -91,7 +91,7 @@ The application detects duplicate or highly similar messages across channels and
 - **FR-007**: System MUST provide error handling with user-friendly messages when operations fail
 - **FR-008**: System MUST maintain audit logs of all API interactions and page creations
 - **FR-009**: System MUST support thread summarization with context preservation and participant identification
-- **FR-010**: System MUST detect duplicate content using [NEEDS CLARIFICATION: similarity threshold - exact matches only, semantic similarity, or configurable percentage?]
+- **FR-010**: System MUST detect duplicate content using semantic similarity analysis with 80% threshold for content matching
 - **FR-011**: System MUST support configurable Notion database destinations per Slack workspace or channel
 - **FR-012**: System MUST handle message formatting conversion from Slack markup to Notion-compatible format
 
@@ -103,6 +103,12 @@ The application detects duplicate or highly similar messages across channels and
 - **ProcessingQueue**: Manages API requests, rate limiting, and retry logic for both Slack and Notion operations
 - **SummaryReport**: Aggregated content from multiple messages organized by time period, keyword, or channel
 - **DuplicateGroup**: Collection of similar messages with references to original sources and consolidated Notion page
+
+## Clarifications
+
+### Session 2025-11-06
+
+- Q: For duplicate message detection (FR-010), how should the system determine if messages are similar enough to be considered duplicates? → A: Semantic similarity with 80% threshold (using text analysis)
 
 ## Success Criteria *(mandatory)*
 

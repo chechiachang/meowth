@@ -42,6 +42,12 @@ Generate tasks for implementation
 /speckit.tasks
 ```
 
+Implement
+
+```
+/speckit.implement
+```
+
 ---
 
 ## Notes
