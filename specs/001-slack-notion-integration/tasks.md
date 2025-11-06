@@ -1,290 +1,287 @@
-# Tasks: Slack-Notion Integration
+# Implementation Tasks: Slack-Notion Integration
+
+**Feature**: Slack-Notion Integration  
+**Branch**: `001-slack-notion-integration`  
+**Created**: 2025-11-06  
+**Total Tasks**: 67
 
 **Input**: Design documents from `/specs/001-slack-notion-integration/`
 **Prerequisites**: plan.md (required), spec.md (required for user stories), research.md, data-model.md, contracts/
 
-**Tests**: Test tasks are NOT included as they were not explicitly requested in the feature specification.
+**Tests**: Following TDD approach from constitution - contract tests written before implementation
+**Organization**: Tasks grouped by user story to enable independent implementation and testing
 
-**Organization**: Tasks are grouped by user story to enable independent implementation and testing of each story.
+## Task Summary
 
-## Format: `[ID] [P?] [Story] Description`
+| Phase | Task Count | Description |
+|-------|------------|-------------|
+| Setup | 6 | Project initialization and foundational infrastructure |
+| Foundational | 11 | Core models, utilities, and API client setup (BLOCKS all user stories) |
+| User Story 1 (P1) | 10 | Slash command to Notion page creation |
+| User Story 2 (P2) | 10 | Keyword-based message aggregation |
+| User Story 3 (P3) | 10 | Thread and history summarization |
+| User Story 4 (P4) | 10 | Duplicate message organization |
+| Polish | 10 | Cross-cutting concerns and production readiness |
 
-- **[P]**: Can run in parallel (different files, no dependencies)
-- **[Story]**: Which user story this task belongs to (e.g., US1, US2, US3, US4)
-- Include exact file paths in descriptions
+**Parallel Opportunities**: 41 tasks marked with [P] can run in parallel
+**MVP Scope**: User Story 1 provides core value for immediate deployment
 
-## Phase 1: Setup (Shared Infrastructure)
+## Phase 1: Setup
 
-**Purpose**: Project initialization and basic structure for Python 3.11+ Slack-Notion integration service
+**Goal**: Initialize project structure and foundational infrastructure  
+**Prerequisites**: None  
+**Completion Criteria**: Project can be installed, configured, and basic health checks pass
 
 - [ ] T001 Create project structure with src/ and tests/ directories per implementation plan
-- [ ] T002 Initialize Python project with uv package manager and create pyproject.toml with slack-sdk, notion-client, uvloop, pydantic, APScheduler dependencies
+- [ ] T002 Initialize Python project with uv package manager and create pyproject.toml with slack-sdk, notion-client, uvloop, pydantic, APScheduler dependencies  
 - [ ] T003 [P] Configure linting and formatting tools (flake8, black, mypy) in pyproject.toml
 - [ ] T004 [P] Create .env.example file with required environment variables for Slack and Notion API credentials
 - [ ] T005 [P] Setup basic logging configuration in src/config/logging.py
 - [ ] T006 [P] Create Dockerfile and docker-compose.yml for containerized deployment
 
----
+## Phase 2: Foundational
 
-## Phase 2: Foundational (Blocking Prerequisites)
-
-**Purpose**: Core infrastructure that MUST be complete before ANY user story can be implemented
+**Goal**: Core infrastructure that MUST be complete before ANY user story can be implemented  
+**Prerequisites**: Phase 1 complete  
+**Completion Criteria**: All models validate correctly, API clients can authenticate, database operations work
 
 **⚠️ CRITICAL**: No user story work can begin until this phase is complete
 
 - [ ] T007 Create database schema and SQLAlchemy models foundation in src/models/__init__.py
 - [ ] T008 [P] Implement configuration management with Pydantic settings in src/config/settings.py
 - [ ] T009 [P] Setup database connection and session management in src/config/database.py
-- [ ] T010 [P] Create base Slack client with socket mode setup in src/services/slack/client.py
-- [ ] T011 [P] Create base Notion client with authentication in src/services/notion/client.py
-- [ ] T012 [P] Implement rate limiting framework with token bucket algorithm in src/services/rate_limiter.py
-- [ ] T013 [P] Setup processing queue infrastructure with AsyncIO in src/scheduling/queue.py
-- [ ] T014 [P] Create error handling middleware and custom exceptions in src/services/exceptions.py
+- [ ] T010 [P] Create base Slack client with socket mode setup in src/integrations/slack_client.py
+- [ ] T011 [P] Create base Notion client with authentication in src/integrations/notion_client.py
+- [ ] T012 [P] Implement rate limiting framework with token bucket algorithm in src/utils/rate_limiter.py
+- [ ] T013 [P] Setup processing queue infrastructure with AsyncIO in src/services/processing_queue_service.py
+- [ ] T014 [P] Create error handling middleware and custom exceptions in src/utils/exceptions.py
 - [ ] T015 [P] Setup API routing framework with FastAPI in src/main.py
-- [ ] T016 [P] Implement health check endpoint in src/services/health.py
+- [ ] T016 [P] Implement health check endpoint in src/api/health.py
 - [ ] T017 Create CLI module structure in src/cli/__init__.py
 
-**Checkpoint**: Foundation ready - user story implementation can now begin in parallel
+## Phase 3: User Story 1 - Slack Command to Notion Page Creation (P1)
 
----
-
-## Phase 3: User Story 1 - Slack Command to Notion Page Creation (Priority: P1) 🎯 MVP
-
-**Goal**: Enable team members to create Notion pages via Slack slash commands (/create-notion [content])
-
+**Goal**: Enable team members to create Notion pages via Slack slash commands (/create-notion [content])  
+**Prerequisites**: Phase 2 complete  
 **Independent Test**: Configure test Slack workspace and Notion database, send `/create-notion Test message`, verify page appears in Notion with correct metadata
 
-### Implementation for User Story 1
+### Contract Tests (TDD)
 
-- [ ] T018 [P] [US1] Create SlackMessage model in src/models/slack_message.py with all required fields and validation rules
-- [ ] T019 [P] [US1] Create NotionPage model in src/models/notion_page.py with page creation and metadata tracking
-- [ ] T020 [P] [US1] Create ProcessingQueue model in src/models/processing_queue.py for task management and retry logic
-- [ ] T021 [US1] Implement Slack command handler service in src/services/slack/command_handler.py for /create-notion processing
-- [ ] T022 [US1] Implement Notion page creation service in src/services/notion/page_creator.py with content formatting
-- [ ] T023 [US1] Implement Slack markup to Notion formatting converter in src/services/processing/content_formatter.py
-- [ ] T024 [US1] Create slash command endpoint in src/services/slack/slash_commands.py with webhook verification
-- [ ] T025 [US1] Integrate command processing with queue system and rate limiting
-- [ ] T026 [US1] Add command response handling with Slack confirmation messages and error feedback
-- [ ] T027 [US1] Implement database persistence for SlackMessage and NotionPage entities
+- [ ] T018 [P] [US1] Create contract tests for Slack slash command handling in tests/contract/test_slack_commands.py
+- [ ] T019 [P] [US1] Create contract tests for Notion page creation in tests/contract/test_notion_pages.py  
+- [ ] T020 [P] [US1] Create contract tests for message processing queue in tests/contract/test_processing_queue.py
 
-**Checkpoint**: At this point, `/create-notion` command should create Notion pages and provide Slack confirmations
+### Core Models
 
----
+- [ ] T021 [P] [US1] Create SlackMessage model in src/models/slack_message.py with all required fields and validation rules
+- [ ] T022 [P] [US1] Create NotionPage model in src/models/notion_page.py with page creation and metadata tracking
+- [ ] T023 [P] [US1] Create ProcessingQueue model in src/models/processing_queue.py for task management and retry logic
 
-## Phase 4: User Story 2 - Keyword-Based Message Aggregation (Priority: P2)
+### Services Implementation
 
-**Goal**: Monitor Slack channels for keywords and generate scheduled aggregation reports in Notion
+- [ ] T024 [US1] Implement Slack command handler service in src/services/slack_command_service.py for /create-notion processing
+- [ ] T025 [US1] Implement Notion page creation service in src/services/notion_page_service.py with content formatting  
+- [ ] T026 [US1] Implement Slack markup to Notion formatting converter in src/utils/text_formatter.py
 
+### API Integration
+
+- [ ] T027 [US1] Create slash command endpoint in src/api/slack_commands.py with webhook verification
+- [ ] T028 [US1] Integrate command processing with queue system and rate limiting in src/services/slack_command_service.py
+
+## Phase 4: User Story 2 - Keyword-Based Message Aggregation (P2)
+
+**Goal**: Monitor Slack channels for keywords and generate scheduled aggregation reports in Notion  
+**Prerequisites**: User Story 1 complete  
 **Independent Test**: Configure keyword monitoring for test channel, post messages with target keywords over time, verify scheduled reports are generated in Notion
 
-### Implementation for User Story 2
+### Contract Tests (TDD)
 
-- [ ] T028 [P] [US2] Create KeywordRule model in src/models/keyword_rule.py with monitoring configuration and validation
-- [ ] T029 [P] [US2] Create SummaryReport model in src/models/summary_report.py for aggregated content tracking
-- [ ] T030 [US2] Implement Slack event listener service in src/services/slack/event_listener.py for real-time message monitoring
-- [ ] T031 [US2] Implement keyword matching engine in src/services/processing/keyword_matcher.py with regex, exact, and contains modes
-- [ ] T032 [US2] Create message aggregation service in src/services/processing/message_aggregator.py for grouping and summarizing
-- [ ] T033 [US2] Implement scheduled job system with APScheduler in src/scheduling/scheduler.py
-- [ ] T034 [US2] Create keyword rule management API endpoints in src/services/api/keyword_rules.py
-- [ ] T035 [US2] Implement aggregation report generation in src/services/notion/report_generator.py
-- [ ] T036 [US2] Add keyword rule CRUD operations with validation and persistence
-- [ ] T037 [US2] Integrate aggregation reports with Notion page creation workflow from User Story 1
+- [ ] T029 [P] [US2] Create contract tests for keyword rule management in tests/contract/test_keyword_rules.py
+- [ ] T030 [P] [US2] Create contract tests for message aggregation in tests/contract/test_aggregation.py
 
-**Checkpoint**: At this point, keyword monitoring and scheduled aggregation reports should be fully functional
+### Core Models
 
----
+- [ ] T031 [P] [US2] Create KeywordRule model in src/models/keyword_rule.py with monitoring configuration and validation
+- [ ] T032 [P] [US2] Create SummaryReport model in src/models/summary_report.py for aggregated content tracking
 
-## Phase 5: User Story 3 - Thread and History Summarization (Priority: P3)
+### Services Implementation
 
-**Goal**: Provide on-demand summarization of Slack threads and channel history via commands
+- [ ] T033 [US2] Implement Slack event listener service in src/integrations/slack_events.py for real-time message monitoring
+- [ ] T034 [US2] Implement keyword matching engine in src/services/keyword_matcher.py with regex, exact, and contains modes
+- [ ] T035 [US2] Create message aggregation service in src/services/aggregation_service.py for grouping and summarizing
 
+### Scheduling System
+
+- [ ] T036 [P] [US2] Implement scheduled job system with APScheduler in src/schedulers/job_manager.py
+- [ ] T037 [P] [US2] Create aggregation job processor in src/schedulers/aggregation_jobs.py
+
+### API Integration
+
+- [ ] T038 [US2] Create keyword rule management API endpoints in src/api/keywords.py
+
+## Phase 5: User Story 3 - Thread and History Summarization (P3)
+
+**Goal**: Provide on-demand summarization of Slack threads and channel history via commands  
+**Prerequisites**: User Story 2 complete (for events infrastructure)  
 **Independent Test**: Create test thread with multiple participants, use `/summarize-thread`, verify coherent summary is generated and saved to Notion
 
-### Implementation for User Story 3
+### Contract Tests (TDD)
 
-- [ ] T038 [P] [US3] Implement thread retrieval service in src/services/slack/thread_reader.py for fetching conversation history
-- [ ] T039 [P] [US3] Implement channel history service in src/services/slack/history_reader.py with timeframe parsing
-- [ ] T040 [P] [US3] Create text summarization engine in src/services/processing/summarizer.py for content analysis
-- [ ] T041 [US3] Add `/summarize-thread` command handler in src/services/slack/command_handler.py
-- [ ] T042 [US3] Add `/summarize-channel` command handler with timeframe support in src/services/slack/command_handler.py
-- [ ] T043 [US3] Implement participant identification and key topic extraction in src/services/processing/content_analyzer.py
-- [ ] T044 [US3] Create summary formatting service in src/services/processing/summary_formatter.py for structured output
-- [ ] T045 [US3] Integrate thread and channel summarization with existing Notion page creation workflow
-- [ ] T046 [US3] Add action item detection and decision tracking in summary generation
-- [ ] T047 [US3] Implement summary metadata storage and retrieval for report tracking
+- [ ] T039 [P] [US3] Create contract tests for thread summarization in tests/contract/test_thread_summary.py
 
-**Checkpoint**: At this point, both thread and channel summarization commands should generate comprehensive summaries
+### Services Implementation
 
----
+- [ ] T040 [P] [US3] Implement thread retrieval service in src/integrations/slack_client.py for fetching conversation history
+- [ ] T041 [P] [US3] Implement channel history service in src/integrations/slack_client.py with timeframe parsing
+- [ ] T042 [P] [US3] Create text summarization engine in src/services/summary_generator.py for content analysis
+- [ ] T043 [US3] Add `/summarize-thread` command handler in src/services/slack_command_service.py
+- [ ] T044 [US3] Add `/summarize-channel` command handler with timeframe support in src/services/slack_command_service.py
+- [ ] T045 [US3] Implement participant identification and key topic extraction in src/utils/content_analyzer.py
+- [ ] T046 [US3] Create summary formatting service in src/utils/summary_formatter.py for structured output
 
-## Phase 6: User Story 4 - Duplicate Message Organization (Priority: P4)
+### API Integration
 
-**Goal**: Detect and consolidate duplicate messages into unified Notion pages with source references
+- [ ] T047 [US3] Add thread summary endpoints to summaries API in src/api/summaries.py
+- [ ] T048 [US3] Integrate thread and channel summarization with existing Notion page creation workflow
 
+## Phase 6: User Story 4 - Duplicate Message Organization (P4)
+
+**Goal**: Detect and consolidate duplicate messages into unified Notion pages with source references  
+**Prerequisites**: User Story 1 complete (for core processing)  
 **Independent Test**: Post similar messages in different channels, verify application identifies duplicates and creates unified Notion pages with proper source references
 
-### Implementation for User Story 4
+### Core Models
 
-- [ ] T048 [P] [US4] Create DuplicateGroup model in src/models/duplicate_group.py for tracking similar messages
-- [ ] T049 [P] [US4] Implement content similarity detection in src/services/processing/duplicate_detector.py using difflib and configurable thresholds
-- [ ] T050 [P] [US4] Create message consolidation service in src/services/processing/message_consolidator.py
-- [ ] T051 [US4] Implement duplicate detection job in src/scheduling/duplicate_jobs.py for periodic scanning
-- [ ] T052 [US4] Create duplicate management API endpoints in src/services/api/duplicates.py for manual override
-- [ ] T053 [US4] Implement consolidated page generation in src/services/notion/consolidation_service.py
-- [ ] T054 [US4] Add source message reference tracking and link generation
-- [ ] T055 [US4] Integrate duplicate detection with existing message processing pipeline
-- [ ] T056 [US4] Implement user notification system for duplicate consolidation events
-- [ ] T057 [US4] Add duplicate group status management (active, merged, split, archived)
+- [ ] T049 [P] [US4] Create DuplicateGroup model in src/models/duplicate_group.py for tracking similar messages
 
-**Checkpoint**: All user stories should now be independently functional with comprehensive duplicate management
+### Services Implementation
 
----
+- [ ] T050 [P] [US4] Implement semantic similarity detection using sentence-transformers in src/utils/similarity_analyzer.py
+- [ ] T051 [P] [US4] Create duplicate detection service in src/services/duplicate_detector.py
+- [ ] T052 [US4] Create message consolidation service in src/services/duplicate_consolidator.py
+- [ ] T053 [US4] Implement duplicate detection job in src/schedulers/aggregation_jobs.py for periodic scanning
+
+### API Integration
+
+- [ ] T054 [US4] Create duplicate management API endpoints in src/api/duplicates.py for manual override
+- [ ] T055 [US4] Implement consolidated page generation in src/services/notion_page_service.py
+- [ ] T056 [US4] Add source message reference tracking and link generation
+- [ ] T057 [US4] Integrate duplicate detection with existing message processing pipeline
+- [ ] T058 [US4] Add duplicate group status management (active, merged, split, archived)
 
 ## Phase 7: Polish & Cross-Cutting Concerns
 
-**Purpose**: Improvements that affect multiple user stories and production readiness
+**Goal**: Production readiness and improvements that affect multiple user stories  
+**Prerequisites**: All desired user stories complete  
+**Completion Criteria**: System ready for production deployment with comprehensive monitoring and error handling
 
-- [ ] T058 [P] Implement comprehensive error handling and user-friendly error messages across all services
-- [ ] T059 [P] Add audit logging for all API interactions and page creations in src/services/audit_logger.py
-- [ ] T060 [P] Create CLI commands for database initialization and migration in src/cli/database.py
-- [ ] T061 [P] Implement circuit breaker pattern for external API resilience in src/services/circuit_breaker.py
-- [ ] T062 [P] Add configuration validation and startup health checks in src/config/validator.py
-- [ ] T063 [P] Create monitoring and metrics collection endpoints in src/services/monitoring.py
-- [ ] T064 [P] Implement graceful shutdown handling for background jobs and connections
-- [ ] T065 [P] Add request/response logging and performance monitoring
-- [ ] T066 [P] Create API documentation generation from OpenAPI specification
-- [ ] T067 Run quickstart.md validation and integration testing
+- [ ] T059 [P] Implement comprehensive error handling and user-friendly error messages across all services
+- [ ] T060 [P] Add audit logging for all API interactions and page creations in src/utils/audit_logger.py
+- [ ] T061 [P] Create CLI commands for database initialization and migration in src/cli/database.py
+- [ ] T062 [P] Implement circuit breaker pattern for external API resilience in src/utils/circuit_breaker.py
+- [ ] T063 [P] Add configuration validation and startup health checks in src/config/validator.py
+- [ ] T064 [P] Create monitoring and metrics collection endpoints in src/api/monitoring.py
+- [ ] T065 [P] Implement graceful shutdown handling for background jobs and connections
+- [ ] T066 [P] Add request/response logging and performance monitoring
+- [ ] T067 [P] Create API documentation generation from OpenAPI specification
+- [ ] T068 Run quickstart.md validation and integration testing
 
----
+## Dependencies
 
-## Dependencies & Execution Order
+### User Story Completion Order
 
-### Phase Dependencies
-
-- **Setup (Phase 1)**: No dependencies - can start immediately
-- **Foundational (Phase 2)**: Depends on Setup completion - BLOCKS all user stories
-- **User Stories (Phase 3-6)**: All depend on Foundational phase completion
-  - User stories can then proceed in parallel (if staffed)
-  - Or sequentially in priority order (P1 → P2 → P3 → P4)
-- **Polish (Phase 7)**: Depends on all desired user stories being complete
-
-### User Story Dependencies
-
-- **User Story 1 (P1)**: Can start after Foundational (Phase 2) - No dependencies on other stories
-- **User Story 2 (P2)**: Can start after Foundational (Phase 2) - Integrates with US1 for Notion page creation but independently testable
-- **User Story 3 (P3)**: Can start after Foundational (Phase 2) - Uses US1 page creation workflow but independently testable
-- **User Story 4 (P4)**: Can start after Foundational (Phase 2) - Uses US1 page creation workflow but independently testable
-
-### Within Each User Story
-
-- Models before services (data structures must exist before business logic)
-- Core services before integration services (base functionality before orchestration)
-- API endpoints after service implementation
-- Story integration after core implementation
-- Story complete before moving to next priority
-
-### Parallel Opportunities
-
-- All Setup tasks marked [P] can run in parallel
-- All Foundational tasks marked [P] can run in parallel (within Phase 2)
-- Once Foundational phase completes, all user stories can start in parallel (if team capacity allows)
-- Models within a story marked [P] can run in parallel
-- Services within a story marked [P] can run in parallel
-- Different user stories can be worked on in parallel by different team members
-
----
-
-## Parallel Example: User Story 1
-
-```bash
-# Launch all models for User Story 1 together:
-Task: "Create SlackMessage model in src/models/slack_message.py"
-Task: "Create NotionPage model in src/models/notion_page.py"
-Task: "Create ProcessingQueue model in src/models/processing_queue.py"
-
-# Launch after models complete:
-Task: "Implement Slack command handler service in src/services/slack/command_handler.py"
-Task: "Implement Notion page creation service in src/services/notion/page_creator.py"
-Task: "Implement content formatter in src/services/processing/content_formatter.py"
+```
+Setup → Foundational → US1 (P1) → US2 (P2) → US3 (P3) → US4 (P4) → Polish
+                                  ↳ US3 can start after US2 events infrastructure
+                                  ↳ US4 can start after US1 core processing
 ```
 
----
+### Task Dependencies Within Stories
 
-## Parallel Example: User Story 2
+- **Contract Tests First**: TDD approach requires tests before implementation
+- **Models → Services → APIs**: Data structures before business logic before endpoints  
+- **Core Services → Integration**: Base functionality before orchestration
+- **Independent Testing**: Each story must be testable without others
 
+## Parallel Execution Examples
+
+### Phase 2 (Foundational) - All Parallel
 ```bash
-# Launch all models for User Story 2 together:
-Task: "Create KeywordRule model in src/models/keyword_rule.py"
-Task: "Create SummaryReport model in src/models/summary_report.py"
-
-# Launch after models complete:
-Task: "Implement Slack event listener service in src/services/slack/event_listener.py"
-Task: "Implement keyword matching engine in src/services/processing/keyword_matcher.py"
-Task: "Create message aggregation service in src/services/processing/message_aggregator.py"
+# All foundational tasks can run simultaneously after setup
+T008, T009, T010, T011, T012, T013, T014, T015, T016 (Infrastructure)
 ```
 
----
+### Phase 3 (US1) - Mixed Parallel/Sequential
+```bash
+# Contract tests first (parallel)
+T018, T019, T020
+
+# Models (parallel, after contracts)
+T021, T022, T023
+
+# Services (sequential, depend on models)
+T024 → T025 → T026
+
+# API integration (depends on services)
+T027, T028
+```
+
+### Phase 4 (US2) - Event-Driven Parallel
+```bash
+# Contract tests (parallel)
+T029, T030
+
+# Models (parallel, after contracts)
+T031, T032
+
+# Core services (T033 first, then parallel)
+T033 → T034, T035
+
+# Scheduling and APIs (parallel)
+T036, T037, T038
+```
 
 ## Implementation Strategy
 
-### MVP First (User Story 1 Only)
-
-1. Complete Phase 1: Setup
-2. Complete Phase 2: Foundational (CRITICAL - blocks all stories)
-3. Complete Phase 3: User Story 1 (Slack Command to Notion Page Creation)
-4. **STOP and VALIDATE**: Test `/create-notion` command independently with real Slack workspace and Notion database
-5. Deploy/demo MVP - core value proposition of bridging Slack conversations to persistent Notion documentation
+### MVP (Minimum Viable Product)
+- **Scope**: Complete User Story 1 only
+- **Value**: Core Slack-to-Notion functionality working
+- **Tasks**: T001-T028 (28 tasks)
+- **Timeline**: ~2-3 weeks for MVP
 
 ### Incremental Delivery
+1. **MVP**: US1 - Manual page creation via slash commands
+2. **Enhancement 1**: US2 - Automated keyword monitoring  
+3. **Enhancement 2**: US3 - Intelligent summarization
+4. **Enhancement 3**: US4 - Duplicate organization
 
-1. Complete Setup + Foundational → Foundation ready
-2. Add User Story 1 → Test independently → Deploy/Demo (MVP! Core slash command functionality)
-3. Add User Story 2 → Test independently → Deploy/Demo (Automated keyword monitoring and aggregation)
-4. Add User Story 3 → Test independently → Deploy/Demo (On-demand summarization capabilities)
-5. Add User Story 4 → Test independently → Deploy/Demo (Duplicate detection and consolidation)
-6. Each story adds value without breaking previous stories
+### Testing Strategy
+- **TDD Approach**: All contract tests written before implementation
+- **Contract Testing**: External API interactions tested independently
+- **Integration Testing**: End-to-end workflows validated
+- **Independent Story Testing**: Each story testable without others
 
-### Parallel Team Strategy
+### Quality Gates
+- [ ] All tests pass (unit, integration, contract)
+- [ ] Code coverage >90%
+- [ ] All pre-commit hooks pass (formatting, linting, typing)
+- [ ] Documentation updated for new features
+- [ ] Performance benchmarks met (5s command response, 99% uptime)
 
-With multiple developers:
+## Success Metrics
 
-1. Team completes Setup + Foundational together
-2. Once Foundational is done:
-   - Developer A: User Story 1 (MVP priority)
-   - Developer B: User Story 2 (Keyword aggregation)
-   - Developer C: User Story 3 (Summarization)
-   - Developer D: User Story 4 (Duplicate detection)
-3. Stories complete and integrate independently
+- **US1**: 95% of slash commands create Notion pages within 10 seconds
+- **US2**: 99% reliability for scheduled aggregation reports  
+- **US3**: 90% user satisfaction with summary quality
+- **US4**: 60% reduction in redundant Notion pages
 
----
+## Format Validation
 
-## Task Summary
+**✅ All tasks follow required format**: `- [ ] [TaskID] [P?] [Story?] Description with file path`
 
-- **Total Tasks**: 67
-- **Setup Phase**: 6 tasks
-- **Foundational Phase**: 11 tasks
-- **User Story 1 (P1)**: 10 tasks
-- **User Story 2 (P2)**: 10 tasks
-- **User Story 3 (P3)**: 10 tasks
-- **User Story 4 (P4)**: 10 tasks
-- **Polish Phase**: 10 tasks
-
-**Parallel Opportunities**: 41 tasks marked [P] can run in parallel within their phase constraints
-
-**Independent Test Criteria**: Each user story has clear acceptance criteria and can be tested independently with real Slack workspaces and Notion databases
-
-**Suggested MVP Scope**: User Story 1 only (Tasks T001-T027) provides core value proposition of Slack-to-Notion page creation
-
-**Format Validation**: All tasks follow required checklist format with checkbox, sequential ID, optional [P] and [Story] labels, and specific file paths
-
----
-
-## Notes
-
-- [P] tasks = different files, no dependencies within phase
-- [Story] label maps task to specific user story for traceability
-- Each user story should be independently completable and testable
-- Constitution compliance maintained through TDD approach, proper error handling, and modular architecture
-- Rate limiting and API safety built into foundational phase to prevent violations
-- All external API interactions include retry logic and circuit breaker patterns
-- Configuration externalized and validated per constitutional requirements
+- **Checkbox**: Every task starts with `- [ ]`
+- **Task ID**: Sequential T001-T068
+- **[P] marker**: 41 tasks marked for parallel execution
+- **[Story] label**: US1, US2, US3, US4 for user story tasks
+- **File paths**: All tasks include specific implementation paths
+- **Independence**: Each user story can be tested independently
