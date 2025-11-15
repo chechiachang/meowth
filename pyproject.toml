@@ -1,0 +1,62 @@
+[project]
+name = "meowth"
+version = "0.1.0"
+description = "Meowth Slack Message Summarizer - A Python Slack bot for message summarization and duplicate detection"
+readme = "README.md"
+authors = [
+    { name = "Che Chia Chang", email = "chechia@maicoin.com" }
+]
+requires-python = ">=3.11"
+dependencies = [
+    "slack-sdk>=3.29.0",
+    "spacy>=3.7.0",
+    "python-dotenv>=1.0.0",
+]
+
+[project.scripts]
+meowth = "meowth.cli:main"
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.uv]
+dev-dependencies = [
+    "pytest>=8.0.0",
+    "pytest-cov>=4.1.0",
+    "pytest-asyncio>=0.23.0",
+    "ruff>=0.1.0",
+    "mypy>=1.8.0",
+]
+
+[tool.ruff]
+line-length = 88
+target-version = "py311"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "N", "W", "UP"]
+ignore = ["E203", "E501"]
+
+[tool.ruff.format]
+quote-style = "double"
+indent-style = "space"
+
+[tool.mypy]
+python_version = "3.11"
+warn_return_any = true
+warn_unused_configs = true
+disallow_untyped_defs = true
+no_implicit_optional = true
+check_untyped_defs = true
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+python_files = ["test_*.py"]
+python_classes = ["Test*"]
+python_functions = ["test_*"]
+addopts = "-v --tb=short --strict-markers"
+markers = [
+    "unit: Unit tests",
+    "integration: Integration tests",
+    "contract: Contract tests",
+]
