@@ -1,20 +1,19 @@
 [project]
 name = "meowth"
 version = "0.1.0"
-description = "Meowth Slack Message Summarizer - A Python Slack bot for message summarization and duplicate detection"
+description = "Meowth Slack Bot - A Python Slack bot that responds to mentions with 'Meowth, that's right!'"
 readme = "README.md"
 authors = [
     { name = "Che Chia Chang", email = "chechia@maicoin.com" }
 ]
 requires-python = ">=3.11"
 dependencies = [
-    "slack-sdk>=3.29.0",
-    "spacy>=3.7.0",
+    "slack-bolt>=1.18.0",
     "python-dotenv>=1.0.0",
 ]
 
 [project.scripts]
-meowth = "meowth.cli:main"
+meowth = "meowth.main:main"
 
 [build-system]
 requires = ["hatchling"]
@@ -25,21 +24,32 @@ dev-dependencies = [
     "pytest>=8.0.0",
     "pytest-cov>=4.1.0",
     "pytest-asyncio>=0.23.0",
-    "ruff>=0.1.0",
+    "black>=23.0.0",
+    "flake8>=7.0.0",
     "mypy>=1.8.0",
 ]
 
-[tool.ruff]
+[tool.black]
 line-length = 88
-target-version = "py311"
+target-version = ['py311']
+include = '\.pyi?$'
+exclude = '''
+/(
+    \.git
+  | \.mypy_cache
+  | \.tox
+  | \.venv
+  | _build
+  | buck-out
+  | build
+  | dist
+)/
+'''
 
-[tool.ruff.lint]
-select = ["E", "F", "I", "N", "W", "UP"]
-ignore = ["E203", "E501"]
-
-[tool.ruff.format]
-quote-style = "double"
-indent-style = "space"
+[tool.flake8]
+max-line-length = 88
+extend-ignore = ["E203", "W503"]
+exclude = [".git", "__pycache__", "dist", "build", ".venv"]
 
 [tool.mypy]
 python_version = "3.11"

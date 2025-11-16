@@ -1,0 +1,199 @@
+openapi: 3.0.3
+info:
+  title: Slack Mention Bot Event Contracts
+  description: Event schemas for Slack app_mention bot processing
+  version: 1.0.0
+
+components:
+  schemas:
+    AppMentionEvent:
+      type: object
+      description: Slack app_mention event received via Socket Mode
+      required:
+        - type
+        - event
+        - event_id
+        - event_time
+      properties:
+        type:
+          type: string
+          enum: ["event_callback"]
+          description: Slack event wrapper type
+        event:
+          $ref: "#/components/schemas/MentionEventData"
+        event_id:
+          type: string
+          pattern: "^Ev[A-Z0-9]+$"
+          description: Unique event identifier from Slack
+        event_time:
+          type: integer
+          description: Unix timestamp when event occurred
+
+    MentionEventData:
+      type: object
+      description: Inner event data for app_mention
+      required:
+        - type
+        - channel
+        - user
+        - text
+        - ts
+      properties:
+        type:
+          type: string
+          enum: ["app_mention"]
+          description: Event type identifier
+        channel:
+          type: string
+          pattern: "^C[A-Z0-9]+$"
+          description: Slack channel ID where mention occurred
+        user:
+          type: string
+          pattern: "^U[A-Z0-9]+$"
+          description: Slack user ID who mentioned the bot
+        text:
+          type: string
+          description: Full message text containing the bot mention
+          example: "Hey <@U01234567> can you help?"
+        ts:
+          type: string
+          pattern: "^[0-9]+\\.[0-9]+$"
+          description: Slack timestamp of the message
+          example: "1699123456.123456"
+        thread_ts:
+          type: string
+          pattern: "^[0-9]+\\.[0-9]+$"
+          description: Thread timestamp if mention is in a thread
+          example: "1699123400.123400"
+        bot_id:
+          type: string
+          pattern: "^B[A-Z0-9]+$"
+          description: Bot ID if message was from a bot (should be ignored)
+
+    BotResponse:
+      type: object
+      description: Response message sent by the bot
+      required:
+        - channel
+        - text
+      properties:
+        channel:
+          type: string
+          pattern: "^C[A-Z0-9]+$"
+          description: Target channel for response
+        text:
+          type: string
+          enum: ["Meowth, that's right!"]
+          description: Fixed response text
+        thread_ts:
+          type: string
+          pattern: "^[0-9]+\\.[0-9]+$"
+          description: Thread timestamp if responding in thread
+
+    ErrorEvent:
+      type: object
+      description: Error conditions during bot operation
+      required:
+        - error_type
+        - message
+      properties:
+        error_type:
+          type: string
+          enum: 
+            - "api_error"
+            - "rate_limit"
+            - "permission_denied"
+            - "connection_error"
+            - "authentication_error"
+          description: Category of error encountered
+        message:
+          type: string
+          description: Human-readable error message
+        channel_id:
+          type: string
+          pattern: "^C[A-Z0-9]+$"
+          description: Related channel if applicable
+        retry_after:
+          type: integer
+          description: Seconds to wait before retry (for rate limits)
+        details:
+          type: object
+          description: Additional error context
+
+    ConnectionEvent:
+      type: object
+      description: Bot connection lifecycle events
+      required:
+        - status
+        - timestamp
+      properties:
+        status:
+          type: string
+          enum: ["connected", "disconnected", "reconnecting"]
+          description: Current connection state
+        timestamp:
+          type: string
+          format: date-time
+          description: When status change occurred
+        reason:
+          type: string
+          description: Reason for status change
+        retry_count:
+          type: integer
+          minimum: 0
+          description: Number of reconnection attempts
+
+  examples:
+    BasicMention:
+      summary: Simple channel mention
+      value:
+        type: "event_callback"
+        event:
+          type: "app_mention"
+          channel: "C1234567890"
+          user: "U9876543210"
+          text: "Hey <@U01BOTUSER> how are you?"
+          ts: "1699123456.123456"
+        event_id: "Ev1234567890ABCDEF"
+        event_time: 1699123456
+
+    ThreadMention:
+      summary: Mention in a thread
+      value:
+        type: "event_callback"
+        event:
+          type: "app_mention"
+          channel: "C1234567890"
+          user: "U9876543210"
+          text: "<@U01BOTUSER> responding to thread"
+          ts: "1699123466.123466"
+          thread_ts: "1699123400.123400"
+        event_id: "Ev1234567890ABCDEF"
+        event_time: 1699123466
+
+    StandardResponse:
+      summary: Bot response message
+      value:
+        channel: "C1234567890"
+        text: "Meowth, that's right!"
+
+    ThreadResponse:
+      summary: Bot response in thread
+      value:
+        channel: "C1234567890"
+        text: "Meowth, that's right!"
+        thread_ts: "1699123400.123400"
+
+    RateLimitError:
+      summary: API rate limit exceeded
+      value:
+        error_type: "rate_limit"
+        message: "Rate limit exceeded, retry after 60 seconds"
+        retry_after: 60
+
+    PermissionError:
+      summary: Missing channel permissions
+      value:
+        error_type: "permission_denied"
+        message: "Bot lacks permission to post in channel"
+        channel_id: "C1234567890"
