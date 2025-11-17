@@ -1,0 +1,201 @@
+openapi: 3.0.3
+info:
+  title: Slack Events Integration
+  description: Event handling contracts for Slack app mention events with AI responses
+  version: 1.0.0
+
+paths:
+  /slack/events/app_mention:
+    post:
+      summary: Handle app mention events
+      description: Process Slack app mention events for AI response generation
+      operationId: handleAppMention
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SlackEvent'
+      responses:
+        '200':
+          description: Event processed successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EventResponse'
+        '400':
+          description: Invalid event data
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /slack/threads/{thread_ts}/messages:
+    get:
+      summary: Retrieve thread messages
+      description: Get all messages in a Slack thread for context analysis
+      operationId: getThreadMessages
+      parameters:
+        - name: thread_ts
+          in: path
+          required: true
+          schema:
+            type: string
+            pattern: '^[0-9]+\.[0-9]+$'
+        - name: channel
+          in: query
+          required: true
+          schema:
+            type: string
+            pattern: '^C[A-Z0-9]+$'
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 50
+            default: 50
+      responses:
+        '200':
+          description: Thread messages retrieved
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ThreadMessagesResponse'
+
+components:
+  schemas:
+    SlackEvent:
+      type: object
+      required:
+        - type
+        - event
+      properties:
+        type:
+          type: string
+          enum: ["event_callback"]
+        event:
+          $ref: '#/components/schemas/AppMentionEvent'
+        team_id:
+          type: string
+        api_app_id:
+          type: string
+
+    AppMentionEvent:
+      type: object
+      required:
+        - type
+        - user
+        - text
+        - ts
+        - channel
+      properties:
+        type:
+          type: string
+          enum: ["app_mention"]
+        user:
+          type: string
+          description: User who mentioned the bot
+          pattern: '^U[A-Z0-9]+$'
+        text:
+          type: string
+          description: Message text mentioning the bot
+        ts:
+          type: string
+          description: Message timestamp
+          pattern: '^[0-9]+\.[0-9]+$'
+        channel:
+          type: string
+          description: Channel where mention occurred
+          pattern: '^C[A-Z0-9]+$'
+        thread_ts:
+          type: string
+          description: Thread timestamp if in thread
+          pattern: '^[0-9]+\.[0-9]+$'
+        client_msg_id:
+          type: string
+          description: Client message ID
+
+    EventResponse:
+      type: object
+      required:
+        - status
+        - processed_at
+      properties:
+        status:
+          type: string
+          enum: ["processed", "queued", "error"]
+        processed_at:
+          type: string
+          format: date-time
+        session_id:
+          type: string
+          description: Tracking ID for this processing session
+        message:
+          type: string
+          description: Status message
+
+    ThreadMessagesResponse:
+      type: object
+      required:
+        - messages
+        - has_more
+        - response_metadata
+      properties:
+        messages:
+          type: array
+          description: Messages in the thread
+          items:
+            $ref: '#/components/schemas/SlackMessage'
+        has_more:
+          type: boolean
+          description: Whether there are more messages
+        response_metadata:
+          type: object
+          properties:
+            next_cursor:
+              type: string
+
+    SlackMessage:
+      type: object
+      required:
+        - type
+        - user
+        - text
+        - ts
+      properties:
+        type:
+          type: string
+          enum: ["message"]
+        user:
+          type: string
+          description: User who sent the message
+          pattern: '^U[A-Z0-9]+$'
+        text:
+          type: string
+          description: Message text content
+        ts:
+          type: string
+          description: Message timestamp
+          pattern: '^[0-9]+\.[0-9]+$'
+        bot_id:
+          type: string
+          description: Bot ID if sent by bot
+        app_id:
+          type: string
+          description: App ID if sent by app
+        thread_ts:
+          type: string
+          description: Thread timestamp
+          pattern: '^[0-9]+\.[0-9]+$'
+
+    ErrorResponse:
+      type: object
+      required:
+        - error
+        - message
+      properties:
+        error:
+          type: string
+        message:
+          type: string

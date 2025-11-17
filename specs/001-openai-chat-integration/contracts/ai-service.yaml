@@ -1,0 +1,257 @@
+openapi: 3.0.3
+info:
+  title: Azure OpenAI Service Interface
+  description: Internal API contracts for Azure OpenAI integration components
+  version: 1.0.0
+
+paths:
+  /ai/chat/completion:
+    post:
+      summary: Generate AI response for thread context
+      description: Process thread context and generate appropriate AI response using Azure OpenAI
+      operationId: generateChatCompletion
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ChatCompletionRequest'
+      responses:
+        '200':
+          description: Successful response generation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ChatCompletionResponse'
+        '429':
+          description: Rate limit exceeded
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Azure OpenAI service error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /ai/context/analyze:
+    post:
+      summary: Analyze thread context
+      description: Process Slack thread messages for AI context
+      operationId: analyzeThreadContext
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ContextAnalysisRequest'
+      responses:
+        '200':
+          description: Context analysis completed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ThreadContext'
+        '400':
+          description: Invalid thread data
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+components:
+  schemas:
+    ChatCompletionRequest:
+      type: object
+      required:
+        - thread_context
+        - user_message
+      properties:
+        thread_context:
+          $ref: '#/components/schemas/ThreadContext'
+        user_message:
+          type: string
+          description: Latest user message that mentioned the bot
+          maxLength: 4000
+        generation_params:
+          $ref: '#/components/schemas/GenerationParams'
+
+    ChatCompletionResponse:
+      type: object
+      required:
+        - content
+        - metadata
+      properties:
+        content:
+          type: string
+          description: Generated AI response
+          maxLength: 4000
+        metadata:
+          $ref: '#/components/schemas/ResponseMetadata'
+
+    ContextAnalysisRequest:
+      type: object
+      required:
+        - thread_ts
+        - channel_id
+        - messages
+      properties:
+        thread_ts:
+          type: string
+          description: Slack thread timestamp
+          pattern: '^[0-9]+\.[0-9]+$'
+        channel_id:
+          type: string
+          description: Slack channel ID
+          pattern: '^C[A-Z0-9]+$'
+        messages:
+          type: array
+          description: Thread messages for analysis
+          maxItems: 50
+          items:
+            $ref: '#/components/schemas/ThreadMessage'
+
+    ThreadContext:
+      type: object
+      required:
+        - thread_ts
+        - channel_id
+        - messages
+        - token_count
+        - created_at
+      properties:
+        thread_ts:
+          type: string
+          pattern: '^[0-9]+\.[0-9]+$'
+        channel_id:
+          type: string
+          pattern: '^C[A-Z0-9]+$'
+        messages:
+          type: array
+          maxItems: 50
+          items:
+            $ref: '#/components/schemas/ThreadMessage'
+        token_count:
+          type: integer
+          minimum: 1
+          maximum: 4000
+        created_at:
+          type: string
+          format: date-time
+
+    ThreadMessage:
+      type: object
+      required:
+        - user_id
+        - text
+        - timestamp
+        - is_bot_message
+        - token_count
+      properties:
+        user_id:
+          type: string
+          description: Slack user ID
+          pattern: '^U[A-Z0-9]+$'
+        text:
+          type: string
+          description: Message content
+          maxLength: 4000
+        timestamp:
+          type: string
+          description: Slack message timestamp
+          pattern: '^[0-9]+\.[0-9]+$'
+        is_bot_message:
+          type: boolean
+          description: Whether this is a bot message
+        token_count:
+          type: integer
+          minimum: 1
+          description: Estimated tokens for this message
+
+    GenerationParams:
+      type: object
+      properties:
+        deployment_name:
+          type: string
+          description: Azure OpenAI model deployment name
+          default: "gpt-35-turbo"
+        model:
+          type: string
+          description: Azure OpenAI model to use
+          default: "gpt-35-turbo"
+          enum: ["gpt-35-turbo", "gpt-4", "gpt-4-turbo"]
+        max_tokens:
+          type: integer
+          minimum: 1
+          maximum: 1000
+          default: 500
+        temperature:
+          type: number
+          minimum: 0
+          maximum: 2
+          default: 0.7
+
+    ResponseMetadata:
+      type: object
+      required:
+        - model_used
+        - deployment_name
+        - tokens_used
+        - generation_time
+        - context_tokens
+        - completion_tokens
+        - azure_endpoint
+        - created_at
+      properties:
+        model_used:
+          type: string
+          description: Azure OpenAI model that generated the response
+        deployment_name:
+          type: string
+          description: Azure OpenAI deployment name used
+        tokens_used:
+          type: integer
+          minimum: 1
+          description: Total tokens consumed
+        generation_time:
+          type: number
+          minimum: 0
+          maximum: 30
+          description: Generation time in seconds
+        context_tokens:
+          type: integer
+          minimum: 0
+          description: Tokens used for context
+        completion_tokens:
+          type: integer
+          minimum: 1
+          description: Tokens used for response
+        azure_endpoint:
+          type: string
+          description: Azure OpenAI endpoint URL used
+        created_at:
+          type: string
+          format: date-time
+
+    ErrorResponse:
+      type: object
+      required:
+        - error
+        - message
+        - timestamp
+      properties:
+        error:
+          type: string
+          description: Error code
+          enum: ["AZURE_RATE_LIMIT_EXCEEDED", "AZURE_QUOTA_EXCEEDED", "AZURE_SERVICE_UNAVAILABLE", "INVALID_CONTEXT", "VALIDATION_ERROR", "AZURE_AUTH_ERROR"]
+        message:
+          type: string
+          description: Human-readable error message
+        timestamp:
+          type: string
+          format: date-time
+        details:
+          type: object
+          description: Additional error details

@@ -62,14 +62,20 @@ def setup_logging(log_level: str = "INFO") -> logging.Logger:
     return logger
 
 
-def log_mention_received(logger: logging.Logger, channel_id: str, user_id: str) -> None:
+def log_mention_received(
+    logger: logging.Logger,
+    channel_id: str,
+    user_id: str,
+    mention_type: str = "standard",
+) -> None:
     """Log when a mention event is received."""
     logger.info(
-        "Mention received",
+        f"Mention received ({mention_type})",
         extra={
             "event_type": "mention_received",
             "channel_id": channel_id,
             "user_id": user_id,
+            "mention_type": mention_type,
         },
     )
 

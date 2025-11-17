@@ -27,10 +27,20 @@ Slack bolt
 /speckit.tasks
 ```
 
+OpenAI
+
+```
+/speckit.specify Add OpenAI integration to the slack app meowth. When app_mention in a slack threads, the app use OpenAI to chat completion to generate a response and respond in threads. Use llama index agent to handle the chat completion.
+
+/speckit.clarify
+/speckit.plan
+/speckit.tasks
+```
+
 Summerize
 
 ```
-/speckit.specify The app should be able to watch app_mention in slack channels. When app_mention in a slack threads, the app summerize messages and respond summary in threads.
+The app should be able to watch app_mention in slack channels. When app_mention in a slack threads, the app summerize messages and respond summary in threads.
 
 /speckit.clarify
 
