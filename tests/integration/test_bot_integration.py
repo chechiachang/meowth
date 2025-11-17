@@ -49,7 +49,8 @@ class TestBotIntegration:
 
     @patch("meowth.client.SocketModeHandler")
     @patch("meowth.client.App")
-    def test_end_to_end_mention_handling(
+    @pytest.mark.asyncio
+    async def test_end_to_end_mention_handling(
         self, mock_app_class, mock_handler, meowth_bot
     ):
         """Test complete flow from mention event to response."""
@@ -69,7 +70,7 @@ class TestBotIntegration:
         event_data = SAMPLE_MENTION_EVENT["event"]
 
         # Process the event (this will call the actual handler)
-        response = meowth_bot.handle_mention_event(event_data)
+        response = await meowth_bot.handle_mention_event_async(event_data, None)
 
         # Verify response was created and sent
         assert response is not None
@@ -84,7 +85,10 @@ class TestBotIntegration:
 
     @patch("meowth.client.SocketModeHandler")
     @patch("meowth.client.App")
-    def test_thread_mention_handling(self, mock_app_class, mock_handler, meowth_bot):
+    @pytest.mark.asyncio
+    async def test_thread_mention_handling(
+        self, mock_app_class, mock_handler, meowth_bot
+    ):
         """Test handling mention in a thread."""
         # Setup mocks
         mock_app_instance = Mock()
@@ -100,7 +104,7 @@ class TestBotIntegration:
         event_data = SAMPLE_THREAD_MENTION_EVENT["event"]
 
         # Process the event
-        response = meowth_bot.handle_mention_event(event_data)
+        response = await meowth_bot.handle_mention_event_async(event_data, None)
 
         # Verify thread response
         assert response.thread_ts == event_data["thread_ts"]
@@ -114,7 +118,8 @@ class TestBotIntegration:
 
     @patch("meowth.client.SocketModeHandler")
     @patch("meowth.client.App")
-    def test_response_timing_requirement(
+    @pytest.mark.asyncio
+    async def test_response_timing_requirement(
         self, mock_app_class, mock_handler, meowth_bot
     ):
         """Test that responses are sent within 5 seconds."""
@@ -133,7 +138,7 @@ class TestBotIntegration:
 
         # Process mention event
         event_data = SAMPLE_MENTION_EVENT["event"]
-        response = meowth_bot.handle_mention_event(event_data)
+        response = await meowth_bot.handle_mention_event_async(event_data, None)
 
         # Verify response time
         end_time = datetime.now(UTC)
@@ -142,21 +147,22 @@ class TestBotIntegration:
         assert processing_time < 5.0, f"Response took {processing_time}s, must be < 5s"
         assert response.status == ResponseStatus.SENT
 
-    def test_multiple_simultaneous_mentions_sequential_processing(
+    @pytest.mark.asyncio
+    async def test_multiple_simultaneous_mentions_sequential_processing(
         self, meowth_bot, mock_logger
     ):
         """Test that multiple simultaneous mentions are processed sequentially."""
         # This tests the requirement for single-threaded sequential processing
 
         processed_events = []
-        original_handle = meowth_bot.handle_mention_event
+        original_handle = meowth_bot.handle_mention_event_async
 
-        def track_processing(event_data):
+        async def track_processing(event_data, context):
             processed_events.append(event_data["ts"])
-            return original_handle(event_data)
+            return await original_handle(event_data, context)
 
         # Mock the handler to track processing order
-        meowth_bot.handle_mention_event = track_processing
+        meowth_bot.handle_mention_event_async = track_processing
 
         # Create multiple events with different timestamps
         events = [
@@ -172,7 +178,7 @@ class TestBotIntegration:
 
         # Process all events
         for event_data in events:
-            meowth_bot.handle_mention_event(event_data)
+            await meowth_bot.handle_mention_event_async(event_data, None)
 
         # Verify sequential processing (timestamps should be in order)
         expected_timestamps = [f"169912345{i}.12345{i}" for i in range(3)]
@@ -180,7 +186,8 @@ class TestBotIntegration:
 
     @patch("meowth.client.SocketModeHandler")
     @patch("meowth.client.App")
-    def test_cross_channel_functionality(
+    @pytest.mark.asyncio
+    async def test_cross_channel_functionality(
         self, mock_app_class, mock_handler, meowth_bot
     ):
         """Test bot functionality across multiple channels."""
@@ -212,7 +219,7 @@ class TestBotIntegration:
                 "ts": f"169912345{i}.12345{i}",
             }
 
-            response = meowth_bot.handle_mention_event(event_data)
+            response = await meowth_bot.handle_mention_event_async(event_data, None)
             responses.append(response)
 
         # Verify all channels got responses
@@ -268,7 +275,8 @@ class TestBotIntegration:
 
     @patch("meowth.client.SocketModeHandler")
     @patch("meowth.client.App")
-    def test_resilient_message_sending_with_retries(
+    @pytest.mark.asyncio
+    async def test_resilient_message_sending_with_retries(
         self, mock_app_class, mock_handler, meowth_bot
     ):
         """Test resilient message sending with automatic retries."""
@@ -292,7 +300,7 @@ class TestBotIntegration:
 
         # Process mention event
         event_data = SAMPLE_MENTION_EVENT["event"]
-        response = meowth_bot.handle_mention_event(event_data)
+        response = await meowth_bot.handle_mention_event_async(event_data, None)
 
         # First attempt should result in RETRYING status due to rate limit
         assert response is not None
