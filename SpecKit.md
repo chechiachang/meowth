@@ -40,9 +40,7 @@ OpenAI
 Summerize
 
 ```
-The app should be able to watch app_mention in slack channels. When app_mention in a slack threads, the app summerize messages and respond summary in threads.
-
+/speckit.specify Implement tools for ai agent to use. When app_mention, the app ai choose tools to respond. For example, if user ask ai to summerize messages, the app use slack api to fetch thread messages in the channel, summerize the messages using OpenAI, and respond in threads.
 /speckit.clarify
-
 /speckit.plan 
 ```
