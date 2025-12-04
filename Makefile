@@ -21,16 +21,16 @@ help:
 
 # Test targets
 test:
-	uv run pytest tests/ -v
+	PYTHONWARNINGS=ignore uv run pytest tests/ -v
 
 test-unit:
-	uv run pytest tests/unit/ -v -m unit
+	uv run pytest tests/unit/ -v
 
 test-integration:
-	uv run pytest tests/integration/ -v -m integration
+	uv run pytest tests/integration/ -v
 
 test-contract:
-	uv run pytest tests/contract/ -v -m contract
+	uv run pytest tests/contract/ -v
 
 test-all: test-unit test-integration test-contract
 

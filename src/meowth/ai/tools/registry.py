@@ -151,12 +151,22 @@ class ToolRegistry:
         """Get a specific tool by name.
 
         Args:
-            name: Tool name
+            name: Tool name (with or without category prefix)
 
         Returns:
             FunctionTool instance or None if not found
         """
-        return self.tools.get(name)
+        # First try the exact name
+        tool = self.tools.get(name)
+        if tool:
+            return tool
+        
+        # Try to find by original tool name across categories
+        for tool_key, tool in self.tools.items():
+            if tool.metadata.name == name:
+                return tool
+                
+        return None
 
     def get_tool_config(self, name: str) -> Optional[Dict[str, Any]]:
         """Get configuration for a specific tool.
@@ -182,6 +192,38 @@ class ToolRegistry:
                 enabled_tools.append(tool)
 
         return enabled_tools
+    
+    def list_tools(self) -> List[FunctionTool]:
+        """Get list of all available tools.
+
+        Returns:
+            List of all registered tools
+        """
+        return list(self.tools.values())
+    
+    def initialize(self) -> List[FunctionTool]:
+        """Initialize the registry (alias for initialize_tools).
+
+        Returns:
+            List of initialized tools
+        """
+        return self.initialize_tools()
+    
+    def cleanup(self) -> None:
+        """Cleanup registry resources (alias for shutdown)."""
+        self.shutdown()
+    
+    def register_tool(self, tool: FunctionTool, config: Optional[Dict[str, Any]] = None) -> None:
+        """Register a tool with the registry.
+
+        Args:
+            tool: FunctionTool instance to register
+            config: Optional configuration for the tool
+        """
+        self.tools[tool.metadata.name] = tool
+        if config:
+            self.tool_configs[tool.metadata.name] = config
+        logger.debug(f"Registered tool: {tool.metadata.name}")
 
     def get_tools_by_category(self, category: str) -> List[FunctionTool]:
         """Get tools belonging to a specific category.

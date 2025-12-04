@@ -97,7 +97,7 @@ class MeowthBot:
                 else:
                     # Process with original handler
                     increment_counter("standard_mentions_received")
-                    return self.handle_mention_event_standard(event_data)
+                    return await self.handle_mention_event_standard(event_data)
 
             except Exception as e:
                 increment_counter("unexpected_errors")
@@ -110,7 +110,7 @@ class MeowthBot:
 
                 # Fallback to standard handling
                 try:
-                    return self.handle_mention_event_standard(event_data)
+                    return await self.handle_mention_event_standard(event_data)
                 except Exception as fallback_error:
                     log_error(
                         self.logger,
@@ -119,7 +119,7 @@ class MeowthBot:
                     )
                     return None
 
-    def handle_mention_event_standard(
+    async def handle_mention_event_standard(
         self, event_data: Dict[str, Any]
     ) -> Optional[ResponseMessage]:
         """
@@ -140,7 +140,7 @@ class MeowthBot:
             )
 
             # Create response message
-            response_message = self.mention_handler.create_response_message(
+            response_message = await self.mention_handler.create_response_message(
                 mention_event
             )
 

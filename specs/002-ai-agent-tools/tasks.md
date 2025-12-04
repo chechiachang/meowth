@@ -72,10 +72,10 @@ Single project structure extending existing Meowth Slack bot:
 - [x] T017 [P] [US1] Implement summarize_messages tool with OpenAI integration in src/meowth/ai/tools/openai_tools.py
 - [x] T018 [US1] Create SlackToolsFactory for dependency injection in src/meowth/ai/tools/factories.py
 - [x] T019 [US1] Create OpenAIToolsFactory for dependency injection in src/meowth/ai/tools/factories.py
-- [ ] T020 [US1] Implement tool registry initialization with configuration in src/meowth/ai/tools/registry.py
-- [ ] T021 [US1] Integrate LlamaIndex FunctionAgent with tools in src/meowth/ai/agent.py
-- [ ] T022 [US1] Update mention handler to use AI agent with tools in src/meowth/handlers/mention.py
-- [ ] T023 [US1] Add error handling and user feedback for tool failures in src/meowth/ai/tools/error_handler.py
+- [x] T020 [US1] Implement tool registry initialization with configuration in src/meowth/ai/tools/registry.py
+- [x] T021 [US1] Integrate LlamaIndex FunctionAgent with tools in src/meowth/ai/agent.py
+- [x] T022 [US1] Update mention handler to use AI agent with tools in src/meowth/handlers/mention.py
+- [x] T023 [US1] Add error handling and user feedback for tool failures in src/meowth/ai/tools/error_handler.py
 
 **Checkpoint**: At this point, User Story 1 should be fully functional - users can request message summaries and receive AI-generated responses
 
@@ -89,18 +89,18 @@ Single project structure extending existing Meowth Slack bot:
 
 ### Tests for User Story 2 ⚠️
 
-- [ ] T024 [P] [US2] Unit test for intent classification logic in tests/unit/ai/test_intent_classifier.py
-- [ ] T025 [P] [US2] Integration test for automatic tool selection in tests/integration/test_auto_tool_selection.py
-- [ ] T026 [P] [US2] Unit test for agent system prompt and tool descriptions in tests/unit/ai/test_agent_prompts.py
+- [x] T024 [P] [US2] Unit test for intent classification logic in tests/unit/ai/test_intent_classifier.py
+- [x] T025 [P] [US2] Integration test for automatic tool selection in tests/integration/test_auto_tool_selection.py
+- [x] T026 [P] [US2] Unit test for agent system prompt and tool descriptions in tests/unit/ai/test_agent_prompts.py
 
 ### Implementation for User Story 2
 
-- [ ] T027 [P] [US2] Implement UserIntent entity and classification logic in src/meowth/ai/intent.py
-- [ ] T028 [P] [US2] Create ToolExecutionContext for request context management in src/meowth/ai/context.py
-- [ ] T029 [US2] Enhance agent with improved system prompt for tool selection in src/meowth/ai/agent.py
-- [ ] T030 [US2] Add tool metadata optimization for LLM understanding in src/meowth/ai/tools/metadata.py
-- [ ] T031 [US2] Implement fallback handling when intent is ambiguous in src/meowth/ai/fallback.py
-- [ ] T032 [US2] Add tool selection logging and debugging in src/meowth/ai/tools/selection_logger.py
+- [x] T027 [P] [US2] Implement UserIntent entity and classification logic in src/meowth/ai/intent.py
+- [x] T028 [P] [US2] Create ToolExecutionContext for request context management in src/meowth/ai/context.py
+- [x] T029 [US2] Enhance agent with improved system prompt for tool selection in src/meowth/ai/agent.py
+- [x] T030 [US2] Add tool metadata optimization for LLM understanding in src/meowth/ai/tools/metadata.py
+- [x] T031 [US2] Implement automatic tool selection integration in src/meowth/ai/auto_selection.py
+- [x] T032 [US2] Update mention handler with auto-selection integration in src/meowth/handlers/mention.py
 
 **Checkpoint**: AI can now automatically select appropriate tools based on natural language requests
 
@@ -114,14 +114,14 @@ Single project structure extending existing Meowth Slack bot:
 
 ### Tests for User Story 3 ⚠️
 
-- [ ] T033 [P] [US3] Unit test for context analysis logic in tests/unit/ai/test_context_analyzer.py
-- [ ] T034 [P] [US3] Integration test for context-aware responses in tests/integration/test_context_awareness.py
-- [ ] T035 [P] [US3] Unit test for channel-specific response formatting in tests/unit/ai/test_response_formatter.py
+- [x] T033 [P] [US3] Unit test for context analysis logic in tests/unit/ai/test_context_analyzer.py
+- [x] T034 [P] [US3] Integration test for context-aware responses in tests/integration/test_context_awareness.py
+- [x] T035 [P] [US3] Unit test for channel-specific response formatting in tests/unit/ai/test_response_formatter.py
 
 ### Implementation for User Story 3
 
-- [ ] T036 [P] [US3] Create ContextAnalyzer for channel and thread analysis in src/meowth/ai/context_analyzer.py
-- [ ] T037 [P] [US3] Implement conversation history management (100 message limit) in src/meowth/ai/conversation_history.py
+- [x] T036 [P] [US3] Create ContextAnalyzer for channel and thread analysis in src/meowth/ai/context_analyzer.py
+- [x] T037 [P] [US3] Implement conversation history management (100 message limit) in src/meowth/ai/conversation_history.py
 - [ ] T038 [US3] Enhance tools with context-aware parameter extraction in src/meowth/ai/tools/context_aware.py
 - [ ] T039 [US3] Add participant analysis for team context understanding in src/meowth/ai/participant_analyzer.py
 - [ ] T040 [US3] Create ResponseFormatter for context-appropriate responses in src/meowth/ai/response_formatter.py

@@ -199,6 +199,25 @@ class ToolExecutionLogger:
             exc_info=True,
         )
 
+    async def log_execution_error(
+        self,
+        tool_name: str,
+        execution_id: str,
+        error: Exception,
+        user_id: Optional[str] = None,
+        channel_id: Optional[str] = None,
+    ) -> None:
+        """Log tool execution error (async version).
+
+        Args:
+            tool_name: Name of the tool
+            execution_id: Unique execution identifier
+            error: Exception that occurred
+            user_id: User who triggered the execution
+            channel_id: Channel where execution was triggered
+        """
+        self.log_tool_error(tool_name, execution_id, error, user_id, channel_id)
+
     def log_rate_limit(
         self, endpoint: str, wait_time: float, tool_name: Optional[str] = None
     ) -> None:

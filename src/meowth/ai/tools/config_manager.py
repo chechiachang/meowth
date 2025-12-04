@@ -57,6 +57,17 @@ class ConfigurationManager:
         self._reload_callbacks: List[Callable[[ToolsConfiguration], None]] = []
         self._hot_reload_enabled = False
 
+    def initialize(self, enable_hot_reload: bool = False) -> ToolsConfiguration:
+        """Initialize the configuration manager by loading configuration.
+
+        Args:
+            enable_hot_reload: Whether to enable hot-reload functionality
+
+        Returns:
+            Loaded configuration object
+        """
+        return self.load_configuration(enable_hot_reload)
+
     def load_configuration(self, enable_hot_reload: bool = False) -> ToolsConfiguration:
         """Load configuration from YAML file with validation.
 
@@ -129,6 +140,14 @@ class ConfigurationManager:
         with self._lock:
             return self._config
 
+    def get_config(self) -> Optional[ToolsConfiguration]:
+        """Alias for get_configuration for contract compatibility.
+
+        Returns:
+            Current configuration object or None if not loaded
+        """
+        return self.get_configuration()
+
     def validate_configuration(self, config_data: dict) -> ToolsConfiguration:
         """Validate configuration data without loading from file.
 
@@ -172,6 +191,16 @@ class ConfigurationManager:
         with self._lock:
             if callback in self._reload_callbacks:
                 self._reload_callbacks.remove(callback)
+
+    def register_reload_callback(
+        self, callback: Callable[[ToolsConfiguration], None]
+    ) -> None:
+        """Alias for add_reload_callback for contract compatibility.
+
+        Args:
+            callback: Function to call with new configuration
+        """
+        return self.add_reload_callback(callback)
 
     def _setup_hot_reload(self) -> None:
         """Setup file watching for hot-reload functionality."""
@@ -229,6 +258,10 @@ class ConfigurationManager:
                 self._observer = None
                 self._hot_reload_enabled = False
                 logger.info("Configuration hot-reload stopped")
+
+    def cleanup(self) -> None:
+        """Alias for stop_hot_reload for contract compatibility."""
+        self.stop_hot_reload()
 
     def __enter__(self):
         """Context manager entry."""

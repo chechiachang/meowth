@@ -14,28 +14,45 @@ from .logging import ToolExecutionLogger
 from .base import tool_error_handler
 
 
-def create_openai_tools(client: Any, config: Dict[str, Any]) -> List[FunctionTool]:
+def create_openai_tools(client: Any, config) -> List[FunctionTool]:
     """Create OpenAI tools based on configuration.
 
     Args:
         client: OpenAI client instance (or similar AI service client)
-        config: OpenAI tools configuration dictionary
+        config: OpenAI tools configuration (dict or OpenAIToolsConfig)
 
     Returns:
         List of configured OpenAI tools
     """
     tools: List[FunctionTool] = []
 
-    if not config.get("enabled", False):
+    # Handle both dict and Pydantic model config
+    if hasattr(config, "enabled"):
+        enabled = config.enabled
+    else:
+        enabled = config.get("enabled", False)
+        
+    if not enabled:
         return tools
 
     logger = ToolExecutionLogger()
 
+    # Get tools configuration
+    if hasattr(config, "tools"):
+        tools_config = config.tools
+    else:
+        tools_config = config.get("tools", {})
+
     # Create summarize_messages tool if enabled
-    summarize_config = config.get("tools", {}).get("summarize_messages", {})
+    summarize_config = tools_config.get("summarize_messages", {})
     if summarize_config.get("enabled", False):
 
-        @tool_error_handler
+        @tool_error_handler(
+            error_message="Failed to summarize messages",
+            category=ErrorCategory.TOOL_ERROR,
+            severity=ErrorSeverity.MEDIUM,
+            user_guidance="Please check that the messages are valid and try again",
+        )
         async def summarize_messages(messages_json: str, style: str = "brief") -> str:
             """Summarize Slack messages using AI.
 
@@ -46,6 +63,9 @@ def create_openai_tools(client: Any, config: Dict[str, Any]) -> List[FunctionToo
             Returns:
                 Human-readable summary of the messages
             """
+            import uuid
+            execution_id = str(uuid.uuid4())
+            
             try:
                 # Parse the messages JSON
                 try:
@@ -76,19 +96,9 @@ def create_openai_tools(client: Any, config: Dict[str, Any]) -> List[FunctionToo
                         tool_name="summarize_messages",
                     )
 
-                # Log tool execution start
-                await logger.log_execution_start(
-                    tool_name="summarize_messages",
-                    parameters={"message_count": len(messages), "style": style},
-                )
-
                 # Handle empty messages
                 if not messages:
-                    summary = "No messages to summarize (0 messages found)."
-                    await logger.log_execution_success(
-                        tool_name="summarize_messages", result="Empty message summary"
-                    )
-                    return summary
+                    return "No messages to summarize."
 
                 # For initial implementation, create basic summary without OpenAI
                 # This can be enhanced later with actual OpenAI integration
@@ -129,11 +139,14 @@ This is a basic summary. Enhanced AI summarization coming soon."""
                     summary = f"Conversation summary: {message_count} messages from {user_count} users in {channel}. Recent discussion captured."
 
                 # Log successful execution
-                await logger.log_execution_success(
+                logger.log_tool_success(
                     tool_name="summarize_messages",
-                    result=f"Generated {style} summary for {message_count} messages",
+                    execution_id=execution_id,
+                    result_length=len(summary) if summary else 0,
+                    user_id=None,
+                    channel_id=None,
                 )
-
+                
                 return summary
 
             except ToolError:
@@ -146,7 +159,7 @@ This is a basic summary. Enhanced AI summarization coming soon."""
                     severity=ErrorSeverity.HIGH,
                     category=ErrorCategory.INTERNAL_ERROR,
                     tool_name="summarize_messages",
-                    details={"original_error": str(e)},
+                    context={"original_error": str(e)},
                 )
 
                 await logger.log_execution_error(

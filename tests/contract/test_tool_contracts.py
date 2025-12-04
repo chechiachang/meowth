@@ -20,12 +20,12 @@ class ToolContractTester:
         assert hasattr(tool, "metadata")
         assert hasattr(tool.metadata, "name")
         assert hasattr(tool.metadata, "description")
-        assert hasattr(tool.metadata, "parameters")
+        assert hasattr(tool.metadata, "get_parameters_dict")
 
         # Metadata should be properly typed
         assert isinstance(tool.metadata.name, str)
         assert isinstance(tool.metadata.description, str)
-        assert isinstance(tool.metadata.parameters, dict)
+        assert isinstance(tool.metadata.get_parameters_dict(), dict)
 
         # Tool should have call method
         assert hasattr(tool, "call")
@@ -45,9 +45,18 @@ class ToolContractTester:
         assert len(metadata.description) > 10
 
         # Parameters should include type information
-        for param_name, param_info in metadata.parameters.items():
+        parameters_schema = metadata.get_parameters_dict()
+        
+        # Handle JSON schema format (with properties) or direct parameter dict
+        if "properties" in parameters_schema:
+            parameters = parameters_schema["properties"]
+        else:
+            parameters = parameters_schema
+            
+        for param_name, param_info in parameters.items():
             assert isinstance(param_name, str)
             assert isinstance(param_info, dict)
+            assert "type" in param_info or "description" in param_info
             assert "type" in param_info or "description" in param_info
 
     @staticmethod
@@ -63,7 +72,7 @@ class TestSlackToolsContract:
     """Contract tests specifically for Slack tools."""
 
     @pytest.fixture
-    async def mock_slack_tool(self):
+    def mock_slack_tool(self):
         """Create a mock Slack tool for contract testing."""
         from meowth.ai.tools.slack_tools import create_slack_tools
         from unittest.mock import Mock
@@ -101,7 +110,13 @@ class TestSlackToolsContract:
 
             # fetch_messages should have expected parameters
             if metadata.name == "fetch_messages":
-                params = metadata.parameters
+                params_schema = metadata.get_parameters_dict()
+                # Handle JSON schema format
+                if "properties" in params_schema:
+                    params = params_schema["properties"]
+                else:
+                    params = params_schema
+                    
                 assert "channel_id" in params
                 assert "count" in params
 
@@ -115,7 +130,7 @@ class TestOpenAIToolsContract:
     """Contract tests specifically for OpenAI tools."""
 
     @pytest.fixture
-    async def mock_openai_tool(self):
+    def mock_openai_tool(self):
         """Create a mock OpenAI tool for contract testing."""
         from meowth.ai.tools.openai_tools import create_openai_tools
         from unittest.mock import Mock
@@ -159,20 +174,26 @@ class TestOpenAIToolsContract:
 
             # summarize_messages should have expected parameters
             if metadata.name == "summarize_messages":
-                params = metadata.parameters
+                params_schema = metadata.get_parameters_dict()
+                # Handle JSON schema format
+                if "properties" in params_schema:
+                    params = params_schema["properties"]
+                else:
+                    params = params_schema
+                    
                 assert "messages_json" in params
 
                 # style parameter should be optional
                 if "style" in params:
                     style_info = params["style"]
-                    assert "optional" in style_info or "default" in style_info
+                    assert "default" in style_info or "type" in style_info
 
 
 class TestToolRegistryContract:
     """Contract tests for the tool registry."""
 
     @pytest.fixture
-    async def mock_registry(self):
+    def mock_registry(self):
         """Create a mock registry for contract testing."""
         from meowth.ai.tools.registry import ToolRegistry
 

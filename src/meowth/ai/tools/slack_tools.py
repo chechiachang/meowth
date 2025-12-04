@@ -6,7 +6,7 @@ including message fetching with rate limiting and error handling.
 
 import json
 from typing import List, Dict, Any
-from datetime import datetime
+from datetime import datetime, timezone
 
 from slack_sdk import WebClient
 from slack_sdk.errors import SlackApiError
@@ -18,77 +18,91 @@ from .logging import ToolExecutionLogger
 from .base import tool_error_handler
 
 
-def create_slack_tools(client: WebClient, config: Dict[str, Any]) -> List[FunctionTool]:
+def create_slack_tools(client: WebClient, config) -> List[FunctionTool]:
     """Create Slack tools based on configuration.
 
     Args:
         client: Slack WebClient instance
-        config: Slack tools configuration dictionary
+        config: Slack tools configuration (dict or SlackToolsConfig)
 
     Returns:
         List of configured Slack tools
     """
     tools: List[FunctionTool] = []
 
-    if not config.get("enabled", False):
+    # Handle both dict and Pydantic model config
+    if hasattr(config, "enabled"):
+        enabled = config.enabled
+    else:
+        enabled = config.get("enabled", False)
+        
+    if not enabled:
         return tools
 
     # Initialize rate limiter
     rate_limiter = SlackRateLimiter()
     logger = ToolExecutionLogger()
 
+    # Get tools configuration
+    if hasattr(config, "tools"):
+        tools_config = config.tools
+    else:
+        tools_config = config.get("tools", {})
+
     # Create fetch_messages tool if enabled
-    fetch_config = config.get("fetch_messages", {})
+    fetch_config = tools_config.get("fetch_messages", {})
     if fetch_config.get("enabled", False):
 
-        @tool_error_handler
-        async def fetch_messages(channel_id: str, count: int = 10) -> str:
+        default_limit = fetch_config.get("default_limit", 10)
+        
+        @tool_error_handler(
+            error_message="Failed to fetch Slack messages",
+            category=ErrorCategory.NETWORK,
+            severity=ErrorSeverity.MEDIUM,
+            user_guidance="Please check the channel ID and try again",
+        )
+        async def fetch_messages(channel_id: str, limit: int = default_limit) -> str:
             """Fetch recent messages from a Slack channel.
 
             Args:
                 channel_id: The ID of the Slack channel to fetch messages from
-                count: Number of messages to fetch (default: 10, max: 100)
+                limit: Number of messages to fetch (default: 10, max: 100)
 
             Returns:
                 JSON string containing messages and metadata
             """
+            import uuid
+            execution_id = str(uuid.uuid4())
+            
             # Validate inputs
             if not channel_id:
                 raise ToolError(
                     message="Channel ID cannot be empty",
                     severity=ErrorSeverity.HIGH,
-                    category=ErrorCategory.VALIDATION_ERROR,
+                    category=ErrorCategory.INVALID_INPUT,
                     tool_name="fetch_messages",
                 )
 
-            if not isinstance(count, int) or count < 1:
+            if not isinstance(limit, int) or limit < 1:
                 raise ToolError(
-                    message="Count must be a positive integer",
+                    message="Limit must be a positive integer",
                     severity=ErrorSeverity.MEDIUM,
-                    category=ErrorCategory.VALIDATION_ERROR,
+                    category=ErrorCategory.INVALID_INPUT,
                     tool_name="fetch_messages",
                 )
 
-            # Enforce reasonable limits
-            count = min(count, 100)
+            # Enforce configured limits
+            max_messages = fetch_config.get("max_messages", 100)
+            limit = min(limit, max_messages)
 
             try:
-                # Check rate limiting
-                await rate_limiter.check_rate_limit("conversations.history")
-
-                # Log tool execution start
-                await logger.log_execution_start(
-                    tool_name="fetch_messages",
-                    parameters={"channel_id": channel_id, "count": count},
-                )
-
                 # Fetch messages from Slack
                 response = client.conversations_history(
-                    channel=channel_id, limit=count, inclusive=True
+                    channel=channel_id, limit=limit, inclusive=True
                 )
 
                 # Process messages
-                messages = response.get("messages", [])
+                messages: list[dict] = response.get("messages", [])
                 processed_messages = []
 
                 for msg in messages:
@@ -110,17 +124,20 @@ def create_slack_tools(client: WebClient, config: Dict[str, Any]) -> List[Functi
                     "messages": processed_messages,
                     "channel": channel_id,
                     "total_fetched": len(processed_messages),
-                    "fetch_timestamp": datetime.utcnow().isoformat(),
+                    "fetch_timestamp": datetime.now(timezone.utc).isoformat(),
                 }
 
                 result_json = json.dumps(result, ensure_ascii=False, indent=2)
 
                 # Log successful execution
-                await logger.log_execution_success(
+                logger.log_tool_success(
                     tool_name="fetch_messages",
-                    result=f"Fetched {len(processed_messages)} messages",
+                    execution_id=execution_id,
+                    result_length=len(result_json) if result_json else 0,
+                    user_id=None,
+                    channel_id=channel_id,
                 )
-
+                
                 return result_json
 
             except SlackApiError as e:
@@ -149,11 +166,13 @@ def create_slack_tools(client: WebClient, config: Dict[str, Any]) -> List[Functi
                     severity=severity,
                     category=category,
                     tool_name="fetch_messages",
-                    details={"slack_error": error_code, "channel_id": channel_id},
+                    context={"slack_error": error_code, "channel_id": channel_id},
                 )
 
                 await logger.log_execution_error(
-                    tool_name="fetch_messages", error=tool_error
+                    execution_id=execution_id,
+                    tool_name="fetch_messages", 
+                    error=tool_error
                 )
 
                 raise tool_error
@@ -167,7 +186,9 @@ def create_slack_tools(client: WebClient, config: Dict[str, Any]) -> List[Functi
                 )
 
                 await logger.log_execution_error(
-                    tool_name="fetch_messages", error=tool_error
+                    execution_id=execution_id,
+                    tool_name="fetch_messages", 
+                    error=tool_error
                 )
 
                 raise tool_error

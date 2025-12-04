@@ -10,9 +10,18 @@ from __future__ import annotations
 import asyncio
 import logging
 import time
-from typing import Optional, Dict, Any
+import warnings
+from typing import Optional, Dict, Any, List
 
+# Suppress all deprecation and future warnings from LlamaIndex and related libraries
+warnings.filterwarnings("ignore", category=DeprecationWarning, module="llama_index")
+warnings.filterwarnings("ignore", category=DeprecationWarning, module="deprecated")
+warnings.filterwarnings("ignore", message="Call to deprecated class ReActAgent")
+warnings.filterwarnings("ignore", message="Call to deprecated class AgentRunner")
+
+# Now import LlamaIndex components
 from llama_index.core.agent import ReActAgent
+
 from llama_index.core.tools import FunctionTool
 from llama_index.core.memory import ChatMemoryBuffer
 from llama_index.llms.azure_openai import AzureOpenAI as LlamaAzureOpenAI  # type: ignore[import-untyped]
@@ -38,6 +47,9 @@ class LlamaIndexAgentWrapper:
 
         self.config = azure_config
         self._llm = self._create_llm()
+
+        # Initialize with basic tools, can be updated with registry tools
+        self._tools: List[FunctionTool] = []
         self._agent = self._create_agent()
 
         # Performance optimization features
@@ -84,11 +96,14 @@ class LlamaIndexAgentWrapper:
 
     def _create_agent(self) -> ReActAgent:
         """Create LlamaIndex ReAct agent with tools."""
-        # Define tools for the agent
+        # Combine built-in tools with registry tools
         tools = [
             self._create_thread_summary_tool(),
             self._create_context_analysis_tool(),
         ]
+
+        # Add tools from registry if available
+        tools.extend(self._tools)
 
         # Create memory buffer for conversation history
         memory = ChatMemoryBuffer.from_defaults(
@@ -103,15 +118,67 @@ class LlamaIndexAgentWrapper:
             memory=memory,
             verbose=True,
             max_iterations=3,  # Limit reasoning iterations
-            system_prompt=(
-                "You are a helpful Slack bot assistant. "
-                "Use the available tools to analyze conversation context and provide relevant responses. "
-                "Keep responses concise and under 2000 characters. "
-                "Be friendly and professional."
-            ),
+            system_prompt=self._get_enhanced_system_prompt(),
         )
 
         return agent  # type: ignore[no-any-return]
+
+    def _get_enhanced_system_prompt(self) -> str:
+        """Get enhanced system prompt optimized for automatic tool selection.
+
+        Returns:
+            Enhanced system prompt with tool selection guidance
+        """
+        return """You are Meowth, an intelligent Slack bot assistant with access to powerful analysis tools.
+
+CORE CAPABILITIES:
+- Analyze conversation threads and provide contextual insights
+- Summarize discussions and extract key themes
+- Look up participant information and engagement patterns
+- Provide helpful responses based on conversation context
+
+TOOL SELECTION STRATEGY:
+1. For requests like "summarize" or "what happened": Use message fetching + summarization tools
+2. For questions about "who said what" or "participants": Use message fetching + analysis tools
+3. For greetings or simple questions: Respond directly without tools
+4. When uncertain about user intent: Ask for clarification
+
+RESPONSE GUIDELINES:
+- Keep responses under 2000 characters for Slack readability
+- Be concise but informative
+- Use tools efficiently - don't over-fetch data
+- Provide actionable insights when possible
+- Maintain a friendly, professional tone
+- If tools fail, provide a helpful fallback response
+
+TOOL EXECUTION PRINCIPLES:
+- Choose the most relevant tool for the user's specific request
+- Use conversation context to inform tool parameters
+- Combine multiple tools only when necessary for comprehensive answers
+- Prefer recent messages unless user specifies otherwise
+- Handle tool failures gracefully with alternative approaches
+
+Remember: Your goal is to provide valuable assistance while being efficient with tool usage and responsive to user needs."""
+
+    def _get_system_prompt(self) -> str:
+        """Get the system prompt for the agent.
+        
+        Returns:
+            The enhanced system prompt
+        """
+        return self._get_enhanced_system_prompt()
+
+    def set_tools(self, tools: List[FunctionTool]) -> None:
+        """Set tools from the tool registry.
+
+        Args:
+            tools: List of LlamaIndex FunctionTool objects from the registry
+        """
+        self._tools = tools
+        # Recreate agent with new tools
+        self._agent = self._create_agent()
+
+        logger.info(f"Agent updated with {len(tools)} tools from registry")
 
     def _create_thread_summary_tool(self) -> FunctionTool:
         """Create tool for summarizing thread context."""

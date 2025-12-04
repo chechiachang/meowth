@@ -132,6 +132,7 @@ class AzureOpenAIClient:
         self,
         thread_context: ThreadContext,
         system_prompt: str = "You are a helpful Slack bot assistant.",
+        user_message: Optional[str] = None,
         session: Optional["RequestSession"] = None,
         **kwargs: Any,
     ) -> AIResponse:
@@ -140,6 +141,7 @@ class AzureOpenAIClient:
         Args:
             thread_context: Analyzed thread context
             system_prompt: System prompt for the AI
+            user_message: Optional specific user message to respond to
             session: Optional RequestSession for tracking
             **kwargs: Additional parameters for the API call
 
@@ -169,7 +171,7 @@ class AzureOpenAIClient:
             await self.rate_limiter.acquire()
 
             # Build messages for Azure OpenAI
-            messages = self._build_messages(thread_context, system_prompt)
+            messages = self._build_messages(thread_context, system_prompt, user_message)
 
             # Count context tokens
             context_tokens = sum(self.count_tokens(msg["content"]) for msg in messages)
@@ -281,13 +283,14 @@ class AzureOpenAIClient:
             )
 
     def _build_messages(
-        self, thread_context: ThreadContext, system_prompt: str
+        self, thread_context: ThreadContext, system_prompt: str, user_message: Optional[str] = None
     ) -> list[Dict[str, str]]:
         """Build message list for Azure OpenAI chat completion.
 
         Args:
             thread_context: Thread context with messages
             system_prompt: System prompt for the AI
+            user_message: Optional specific user message to respond to
 
         Returns:
             List of message dictionaries for OpenAI API
@@ -307,12 +310,20 @@ class AzureOpenAIClient:
             messages.append({"role": role, "content": content})
 
         # Add final instruction
-        messages.append(
-            {
-                "role": "user",
-                "content": "Please provide a helpful response to the above conversation.",
-            }
-        )
+        if user_message:
+            messages.append(
+                {
+                    "role": "user",
+                    "content": user_message,
+                }
+            )
+        else:
+            messages.append(
+                {
+                    "role": "user",
+                    "content": "Please provide a helpful response to the above conversation.",
+                }
+            )
 
         return messages
 

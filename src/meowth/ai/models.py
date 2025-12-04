@@ -53,6 +53,7 @@ class ThreadContext:
 
     thread_ts: str
     channel_id: str
+    user_id: Optional[str] = None  # User who initiated the request
     messages: list[ThreadMessage] = field(default_factory=list)
     token_count: int = 0
     created_at: datetime = field(default_factory=datetime.now)

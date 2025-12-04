@@ -97,10 +97,6 @@ class ResponseMessage:
 
     def __post_init__(self) -> None:
         """Validate response data after initialization."""
-        # Validate fixed response text
-        if self.text != "Meowth, that's right!":
-            raise ValueError("text must be exactly 'Meowth, that's right!'")
-
         # Validate channel ID format
         if not re.match(r"^C[A-Z0-9]+$", self.channel_id):
             raise ValueError("channel_id must match Slack channel ID format")

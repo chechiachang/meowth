@@ -21,11 +21,23 @@ class ErrorCategory(str, Enum):
     SYSTEM_ERROR = "system_error"
     CONFIG_ERROR = "config_error"
     DEPENDENCY_ERROR = "dependency_error"
+    INTERNAL_ERROR = "internal_error"
+    DATA_ERROR = "data_error"
+    VALIDATION_ERROR = "validation_error"
+    # Additional values referenced in error_handler
+    RATE_LIMIT_ERROR = "rate_limit_error"
+    CONFIGURATION_ERROR = "configuration_error"
+    EXTERNAL_SERVICE_ERROR = "external_service_error"
+    AUTHENTICATION_ERROR = "authentication_error"
+    PERMISSION_ERROR = "permission_error"
+    TIMEOUT_ERROR = "timeout_error"
+    NETWORK_ERROR = "network_error"
 
 
 class ErrorSeverity(str, Enum):
     """Severity levels for error categorization."""
 
+    FATAL = "fatal"  # Fatal system error
     CRITICAL = "critical"  # System failure, requires immediate attention
     HIGH = "high"  # Tool completely unusable
     MEDIUM = "medium"  # Tool degraded but partially functional
@@ -91,7 +103,9 @@ class ToolError(Exception):
 class SlackToolError(ToolError):
     """Specific error for Slack-related tool failures."""
 
-    def __init__(self, message: str, slack_error: Optional[str] = None, **kwargs):
+    def __init__(
+        self, message: str, slack_error: Optional[str] = None, **kwargs: Any
+    ) -> None:
         super().__init__(message, **kwargs)
         if slack_error:
             self.context["slack_error"] = slack_error
@@ -100,7 +114,9 @@ class SlackToolError(ToolError):
 class OpenAIToolError(ToolError):
     """Specific error for OpenAI-related tool failures."""
 
-    def __init__(self, message: str, openai_error: Optional[str] = None, **kwargs):
+    def __init__(
+        self, message: str, openai_error: Optional[str] = None, **kwargs: Any
+    ) -> None:
         super().__init__(message, **kwargs)
         if openai_error:
             self.context["openai_error"] = openai_error
@@ -109,7 +125,9 @@ class OpenAIToolError(ToolError):
 class ConfigurationError(ToolError):
     """Error in tool configuration."""
 
-    def __init__(self, message: str, config_path: Optional[str] = None, **kwargs):
+    def __init__(
+        self, message: str, config_path: Optional[str] = None, **kwargs: Any
+    ) -> None:
         super().__init__(
             message,
             category=ErrorCategory.CONFIG_ERROR,
@@ -129,8 +147,8 @@ class RateLimitError(ToolError):
         message: str,
         retry_after: Optional[float] = None,
         endpoint: Optional[str] = None,
-        **kwargs,
-    ):
+        **kwargs: Any,
+    ) -> None:
         super().__init__(
             message,
             category=ErrorCategory.RATE_LIMIT,
@@ -147,7 +165,9 @@ class RateLimitError(ToolError):
 class TimeoutError(ToolError):
     """Error when tool execution times out."""
 
-    def __init__(self, message: str, timeout_seconds: Optional[float] = None, **kwargs):
+    def __init__(
+        self, message: str, timeout_seconds: Optional[float] = None, **kwargs: Any
+    ) -> None:
         super().__init__(
             message,
             category=ErrorCategory.TIMEOUT,

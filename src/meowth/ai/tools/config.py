@@ -7,7 +7,7 @@ from pydantic import BaseModel
 class SlackToolsConfig(BaseModel):
     enabled: bool = True
     bot_token: Optional[str] = None
-    fetch_messages: Dict[str, Any] = {}
+    tools: Dict[str, Any] = {}
 
 
 class OpenAIToolsConfig(BaseModel):

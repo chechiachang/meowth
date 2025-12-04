@@ -383,3 +383,47 @@ class SlackClient:
             raise RuntimeError("Slack app not initialized")
 
         self.app.event(event_type)(handler)
+
+    def get_channel_info(self, channel_id: str) -> Optional[Dict[str, Any]]:
+        """Get channel information from Slack API.
+        
+        Args:
+            channel_id: Slack channel ID
+            
+        Returns:
+            Channel info dict or None if error
+        """
+        if not self.app:
+            return None
+            
+        try:
+            result = self.app.client.conversations_info(channel=channel_id)
+            return result.get("channel")
+        except SlackApiError as e:
+            self.logger.warning(f"Failed to get channel info for {channel_id}: {e}")
+            return None
+        except Exception as e:
+            self.logger.error(f"Unexpected error getting channel info: {e}")
+            return None
+
+    def get_user_info(self, user_id: str) -> Optional[Dict[str, Any]]:
+        """Get user information from Slack API.
+        
+        Args:
+            user_id: Slack user ID
+            
+        Returns:
+            User info dict or None if error
+        """
+        if not self.app:
+            return None
+            
+        try:
+            result = self.app.client.users_info(user=user_id)
+            return result.get("user")
+        except SlackApiError as e:
+            self.logger.warning(f"Failed to get user info for {user_id}: {e}")
+            return None
+        except Exception as e:
+            self.logger.error(f"Unexpected error getting user info: {e}")
+            return None

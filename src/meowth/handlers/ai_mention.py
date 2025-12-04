@@ -128,11 +128,14 @@ async def handle_ai_mention(
             logger.info(f"Using basic Azure OpenAI client (thread: {thread_id})")
             # Fallback to basic Azure OpenAI client
             ai_client = get_azure_openai_client()
+            # Extract user message from the mention event
+            user_message = event.get("text", "").strip()
             ai_response = await ai_client.generate_response(
                 thread_context=thread_context,
                 system_prompt="You are a helpful Slack bot assistant. "
                 "Provide concise, friendly, and contextually relevant responses. "
                 "Keep responses under 2000 characters.",
+                user_message=user_message if user_message else None,
                 session=session,  # Pass session for additional tracking
             )
 

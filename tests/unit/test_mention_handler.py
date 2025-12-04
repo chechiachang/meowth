@@ -65,7 +65,8 @@ class TestMentionHandler:
         with pytest.raises(KeyError):
             handler.validate_mention_event(event_data)
 
-    def test_create_response_message_basic(self):
+    @pytest.mark.asyncio
+    async def test_create_response_message_basic(self):
         """Test response message creation for basic mention."""
         handler = MentionHandler()
 
@@ -78,7 +79,7 @@ class TestMentionHandler:
             timestamp="1699123456.123456",
         )
 
-        response = handler.create_response_message(mention_event)
+        response = await handler.create_response_message(mention_event)
 
         assert isinstance(response, ResponseMessage)
         assert response.text == "Meowth, that's right!"
@@ -87,7 +88,8 @@ class TestMentionHandler:
         assert response.thread_ts is None
         assert response.status == ResponseStatus.PENDING
 
-    def test_create_response_message_in_thread(self):
+    @pytest.mark.asyncio
+    async def test_create_response_message_in_thread(self):
         """Test response message creation for mention in thread."""
         handler = MentionHandler()
 
@@ -101,11 +103,12 @@ class TestMentionHandler:
             thread_ts="1699123400.123400",
         )
 
-        response = handler.create_response_message(mention_event)
+        response = await handler.create_response_message(mention_event)
 
         assert response.thread_ts == mention_event.thread_ts
 
-    def test_sequential_processing_behavior(self):
+    @pytest.mark.asyncio
+    async def test_sequential_processing_behavior(self):
         """Test that mentions are processed sequentially."""
         handler = MentionHandler()
 
@@ -125,14 +128,14 @@ class TestMentionHandler:
         # Process events and track order
         processed_order = []
 
-        def mock_process(event):
+        async def mock_process(event):
             processed_order.append(event.event_id)
-            return handler.create_response_message(event)
+            return await handler.create_response_message(event)
 
         # Process all events
         responses = []
         for event in events:
-            response = mock_process(event)
+            response = await mock_process(event)
             responses.append(response)
 
         # Verify sequential processing (order preserved)
@@ -141,7 +144,8 @@ class TestMentionHandler:
         assert len(responses) == 3
         assert all(r.text == "Meowth, that's right!" for r in responses)
 
-    def test_multi_channel_event_processing(self):
+    @pytest.mark.asyncio
+    async def test_multi_channel_event_processing(self):
         """Test that mentions from different channels are processed correctly."""
         handler = MentionHandler()
 
@@ -163,7 +167,7 @@ class TestMentionHandler:
         # Process events and verify channel-specific handling
         responses = []
         for event in events_by_channel:
-            response = handler.create_response_message(event)
+            response = await handler.create_response_message(event)
             responses.append(response)
 
         # Verify each response maintains correct channel context
@@ -175,7 +179,8 @@ class TestMentionHandler:
         # Verify all responses are independent
         assert len(set(r.response_id for r in responses)) == 3  # All unique IDs
 
-    def test_graceful_channel_removal_handling(self):
+    @pytest.mark.asyncio
+    async def test_graceful_channel_removal_handling(self):
         """Test graceful handling when bot is removed from a channel."""
         handler = MentionHandler()
 
@@ -193,7 +198,7 @@ class TestMentionHandler:
         assert mention_event.channel_id == "C0000000000"
 
         # Response creation should work but channel validation occurs at send time
-        response = handler.create_response_message(mention_event)
+        response = await handler.create_response_message(mention_event)
         assert response.channel_id == "C0000000000"
         assert response.text == "Meowth, that's right!"
 
