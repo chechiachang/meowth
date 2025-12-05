@@ -10,6 +10,7 @@ from .utils.logging import setup_logging, log_connection_status
 from .models import BotInstance
 from .client import SlackClient
 from .bot import MeowthBot
+from .ai.monitoring import get_langfuse_observe_decorator
 
 # Global references for cleanup
 _slack_client: Optional[SlackClient] = None
@@ -53,6 +54,18 @@ def main() -> None:
         # Set up logging
         logger = setup_logging(config.log_level)
         logger.info("Starting Meowth Slack bot")
+
+        # Log Langfuse monitoring status
+        try:
+            observe_decorator = get_langfuse_observe_decorator()
+            # Check if keys are at least configured
+            has_keys = bool(config.langfuse_public_key.strip() and config.langfuse_secret_key.strip())
+            if has_keys:
+                logger.info("🔍 Langfuse AI monitoring: ENABLED - AI operations will be traced using observe decorators")
+            else:
+                logger.info("🔍 Langfuse AI monitoring: DISABLED - set LANGFUSE_PUBLIC_KEY and LANGFUSE_SECRET_KEY to enable")
+        except Exception as e:
+            logger.warning(f"🔍 Langfuse AI monitoring: ERROR during setup - {e}")
 
         # Create bot instance
         bot_instance = BotInstance(

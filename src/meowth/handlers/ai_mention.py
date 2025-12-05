@@ -8,6 +8,7 @@ from __future__ import annotations
 
 import logging
 import re
+import time
 from typing import Dict, Any
 
 from slack_sdk import WebClient
@@ -17,6 +18,7 @@ from slack_bolt.context.context import BoltContext
 from ..ai.client import get_azure_openai_client
 from ..ai.context import ContextAnalyzer
 from ..ai.agent import get_llama_agent
+from ..ai.monitoring import get_langfuse_observe_decorator
 from ..ai.models import (
     ThreadContext,
     AIResponse,
@@ -33,15 +35,19 @@ from ..ai.models import (
 logger = logging.getLogger(__name__)
 
 
+@get_langfuse_observe_decorator()(name="ai_mention_handling")
 async def handle_ai_mention(
     event: Dict[str, Any], client: WebClient, context: BoltContext
-) -> None:
+) -> Dict[str, Any]:
     """Handle AI-powered mention with Azure OpenAI response generation and thread isolation.
 
     Args:
         event: Slack mention event data
         client: Slack Web API client
         context: Bolt context with bot information
+
+    Returns:
+        Dict with processing results including status, tokens used, and timing information
 
     This function implements the complete AI mention handling flow with thread isolation:
     1. Create isolated session for thread
@@ -72,6 +78,12 @@ async def handle_ai_mention(
     register_session(session)
     context_analyzer = ContextAnalyzer(client)
 
+    # Initialize variables for return value
+    thread_context = None
+    context_analysis_time = 0.0
+    ai_response = None
+    llama_agent = None
+
     try:
         logger.info(
             f"Processing AI mention with isolation: {session.session_id} from user {event['user']} "
@@ -91,12 +103,14 @@ async def handle_ai_mention(
         session.status = SessionStatus.ANALYZING_CONTEXT
 
         # Analyze thread context with session tracking
+        context_start_time = time.time()
         thread_context = await context_analyzer.analyze_thread_context(
             channel_id=channel_id,
             thread_ts=thread_ts,
             bot_user_id=context.user_id or "UNKNOWN",
             session=session,  # Pass session for isolation tracking
         )
+        context_analysis_time = time.time() - context_start_time
 
         session.thread_context = thread_context
         session.status = SessionStatus.GENERATING_RESPONSE
@@ -130,11 +144,12 @@ async def handle_ai_mention(
             ai_client = get_azure_openai_client()
             # Extract user message from the mention event
             user_message = event.get("text", "").strip()
+            system_prompt = ("You are a helpful Slack bot assistant. "
+                           "Provide concise, friendly, and contextually relevant responses. "
+                           "Keep responses under 2000 characters.")
             ai_response = await ai_client.generate_response(
                 thread_context=thread_context,
-                system_prompt="You are a helpful Slack bot assistant. "
-                "Provide concise, friendly, and contextually relevant responses. "
-                "Keep responses under 2000 characters.",
+                system_prompt=system_prompt,
                 user_message=user_message if user_message else None,
                 session=session,  # Pass session for additional tracking
             )
@@ -158,6 +173,19 @@ async def handle_ai_mention(
             f"Successfully completed AI mention handling: {session.session_id} for thread {thread_id}"
         )
 
+        # Return structured result for Langfuse tracing
+        return {
+            "status": "success",
+            "session_id": session.session_id,
+            "thread_id": thread_id,
+            "tokens_used": ai_response.tokens_used if ai_response else 0,
+            "generation_time": ai_response.generation_time if ai_response else 0.0,
+            "context_analysis_time": context_analysis_time,
+            "message_count": len(thread_context.messages) if thread_context else 0,
+            "token_count": thread_context.token_count if thread_context else 0,
+            "ai_client": "llama_agent" if llama_agent is not None else "azure_openai",
+        }
+
     except ContextAnalysisError as e:
         logger.warning(f"Context analysis failed for thread {thread_id}: {e}")
         session.complete_with_error(f"Context analysis error: {e}")
@@ -168,6 +196,13 @@ async def handle_ai_mention(
             error_type="context_error",
             message="I'm having trouble understanding the conversation context. Could you try rephrasing your question?",
         )
+        return {
+            "status": "error",
+            "error_type": "context_analysis",
+            "error_message": str(e),
+            "session_id": session.session_id,
+            "thread_id": thread_id,
+        }
 
     except RateLimitError as e:
         logger.warning(f"Rate limit exceeded for thread {thread_id}: {e}")
@@ -179,6 +214,13 @@ async def handle_ai_mention(
             error_type="rate_limit",
             message="I'm a bit busy right now! Please try again in a moment. 🤖",
         )
+        return {
+            "status": "error",
+            "error_type": "rate_limit",
+            "error_message": str(e),
+            "session_id": session.session_id,
+            "thread_id": thread_id,
+        }
 
     except AzureOpenAIError as e:
         logger.error(f"Azure OpenAI error for thread {thread_id}: {e}")
@@ -190,6 +232,13 @@ async def handle_ai_mention(
             error_type="ai_service",
             message="My AI brain is currently unavailable. Please try again later! 🧠⚡",
         )
+        return {
+            "status": "error",
+            "error_type": "azure_openai",
+            "error_message": str(e),
+            "session_id": session.session_id,
+            "thread_id": thread_id,
+        }
 
     except Exception as e:
         logger.error(
@@ -204,6 +253,13 @@ async def handle_ai_mention(
             error_type="internal",
             message="Something went wrong! Please try again. If the problem persists, contact support.",
         )
+        return {
+            "status": "error",
+            "error_type": "unexpected",
+            "error_message": str(e),
+            "session_id": session.session_id,
+            "thread_id": thread_id,
+        }
 
     finally:
         # Clean up session tracking and context isolation

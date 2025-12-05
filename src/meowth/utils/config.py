@@ -273,6 +273,28 @@ class Config:
         # Validate Azure OpenAI configuration
         self.validate_azure_openai()
 
+    # Langfuse Configuration
+
+    @property
+    def langfuse_public_key(self) -> str:
+        """Get Langfuse public key for observability."""
+        return os.getenv("LANGFUSE_PUBLIC_KEY", "")
+
+    @property
+    def langfuse_secret_key(self) -> str:
+        """Get Langfuse secret key for observability."""
+        return os.getenv("LANGFUSE_SECRET_KEY", "")
+
+    @property
+    def langfuse_host(self) -> str:
+        """Get Langfuse host URL, defaults to cloud instance."""
+        return os.getenv("LANGFUSE_HOST", "https://cloud.langfuse.com")
+
+    @property
+    def langfuse_enabled(self) -> bool:
+        """Check if Langfuse monitoring is enabled."""
+        return bool(self.langfuse_public_key and self.langfuse_secret_key)
+
 
 # Global configuration instance
 config = Config()

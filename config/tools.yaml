@@ -10,6 +10,16 @@ global:
   max_retries: 3
   rate_limit_rpm: 60
 
+# Observability settings
+observability:
+  langfuse:
+    enabled: true  # Will be auto-disabled if keys not provided
+    trace_all_operations: true
+    trace_context_analysis: true
+    trace_ai_generation: true
+    trace_errors: true
+    flush_on_completion: true
+
 # Tool categories
 tools:
   slack_tools:

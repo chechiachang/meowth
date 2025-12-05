@@ -29,6 +29,7 @@ from .models import (
     ThreadContext,
     RequestSession,
 )
+from .monitoring import get_langfuse_observe_decorator
 
 logger = logging.getLogger(__name__)
 
@@ -128,6 +129,7 @@ class AzureOpenAIClient:
             # Fallback: rough estimation (4 chars per token)
             return len(text) // 4
 
+    @get_langfuse_observe_decorator()(name="azure_openai_generate_response")
     async def generate_response(
         self,
         thread_context: ThreadContext,

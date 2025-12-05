@@ -29,6 +29,7 @@ from llama_index.llms.azure_openai import AzureOpenAI as LlamaAzureOpenAI  # typ
 from ..utils.config import config
 from ..ai.models import ThreadContext, AIResponse, AzureOpenAIError, RequestSession
 from ..ai.client import AzureOpenAIConfig
+from ..ai.monitoring import get_langfuse_observe_decorator
 
 logger = logging.getLogger(__name__)
 
@@ -286,6 +287,7 @@ Remember: Your goal is to provide valuable assistance while being efficient with
             description="Analyze conversation context to understand themes and question types",
         )
 
+    @get_langfuse_observe_decorator()(name="llama_agent_generate_response")
     async def generate_response(
         self,
         thread_context: ThreadContext,

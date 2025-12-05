@@ -1,5 +1,6 @@
 """Unit tests for AI mention handler basic functionality."""
 
+import os
 import pytest
 from unittest.mock import AsyncMock, Mock, patch
 
@@ -13,6 +14,14 @@ from meowth.ai.models import (
     AzureOpenAIError,
     RateLimitError,
 )
+
+
+# Disable Langfuse for tests
+@pytest.fixture(autouse=True)
+def disable_langfuse():
+    """Disable Langfuse monitoring during tests."""
+    with patch.dict(os.environ, {"LANGFUSE_PUBLIC_KEY": "", "LANGFUSE_SECRET_KEY": ""}):
+        yield
 
 
 class TestAIMentionHandler:
